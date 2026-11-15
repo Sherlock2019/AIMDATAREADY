@@ -1,0 +1,67 @@
+# DEMO SCENARIOS: named patches applied to the synthetic catalog for one request ("demo_scenario": "<name>").
+# Only accepted when TDR_MODE=demo. Dict values are merged into the asset record; lists and scalars replace it.
+scenarios:
+  stale_inventory:
+    description: Inventory snapshot is 3 days old but was re-ingested 30 minutes ago.
+    asset_overrides:
+      sap_inventory_snapshot:
+        source_version: SAP-SYN-2026-11-11
+        source_event_time: "2026-11-11T06:00:00+00:00"
+        ingested_at: "2026-11-14T07:30:00+00:00"
+
+  missing_warehouse_c:
+    description: The inventory snapshot has no rows for WH-C.
+    asset_overrides:
+      sap_inventory_snapshot:
+        coverage:
+          warehouse: [WH-A, WH-B]
+
+  lead_times_unavailable:
+    description: The transfer lead-time table is not available.
+    remove_assets: [transfer_lead_times]
+
+  missing_lane:
+    description: Lead times exist, but not for WH-A -> WH-C.
+    asset_overrides:
+      transfer_lead_times:
+        coverage:
+          lane: ["WH-A>WH-B", "WH-B>WH-A", "WH-B>WH-C", "WH-C>WH-A", "WH-C>WH-B"]
+
+  authorization_unavailable:
+    description: The authorisation service does not answer.
+    authorization_unavailable: true
+
+  catalog_unavailable:
+    description: The catalog does not answer.
+    catalog_unavailable: true
+
+  forecast_aging:
+    description: The forecast is 104 hours old (past the 72 h warning, within the 168 h limit).
+    asset_overrides:
+      demand_forecast_weekly:
+        source_event_time: "2026-11-10T00:00:00+00:00"
+        ingested_at: "2026-11-10T01:00:00+00:00"
+
+  forecast_missing_owner:
+    description: The forecast has no recorded business owner (profile says warn).
+    asset_overrides:
+      demand_forecast_weekly:
+        business_owner: null
+
+  inventory_missing_owner:
+    description: The inventory snapshot has no recorded business owner (profile says block).
+    asset_overrides:
+      sap_inventory_snapshot:
+        business_owner: null
+
+  inventory_missing_field:
+    description: The inventory extract lost its expiry_date column.
+    asset_overrides:
+      sap_inventory_snapshot:
+        schema: [product_id, warehouse_id, batch_id, quantity, uom, status]
+
+  inventory_ingestion_time_only:
+    description: The inventory snapshot has an ingestion time but no source event time.
+    asset_overrides:
+      sap_inventory_snapshot:
+        source_event_time: null

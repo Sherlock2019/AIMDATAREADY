@@ -1,0 +1,165 @@
+# LEGACY INPUT - the single source of truth is now pipeline/odcs/<asset>.odcs.yaml (validated ODCS v3.1.0 files,
+# read by the service). This file only feeds the one-time migration: .venv/bin/python scripts/export_odcs.py
+#
+# DATA CONTRACTS (maintenance and operating requirements): what each producer promises its consumers.
+# Task profiles (tasks.yaml) refer to these contracts and may tighten them (e.g. inventory <= 2 h for transfers).
+# `evidence` is filled by real readiness runs (GET /pipeline/catalog/<asset>), never typed in.
+defaults: &defaults
+  version: "1.0"
+  status: approved
+  consumer: SCInsight planning agents (via the readiness gate)
+  purpose: [supply_chain_planning]
+  security: {external_model_processing: requires_approval}
+  operational_expectations: Late or unavailable source -> alert the owner and block automated recommendations.
+  change_management: The data owner approves breaking schema changes; consumers are notified 2 weeks ahead.
+  evidence: {require_recent_validation: true, store_validation_run_id: true, store_source_snapshot_id: true}
+  source_rules: {snapshot_id_required: true, source_event_timestamp_required: true, ingestion_timestamp_required: true}
+
+contracts:
+  s4_mm_stock:
+    <<: *defaults
+    id: inventory_snapshot
+    description: Inventory available by product and warehouse for planning tasks.
+    producer: SAP Integration team
+    ownership: {business_owner: Inventory Operations, technical_owner: SAP Integration team, steward: Supply Chain Data team}
+    schema: {required_fields: [product_id, warehouse_id, batch_id, quantity, uom, status, expiry_date],
+             unique_key: [warehouse_id, batch_id]}
+    business_definitions: {quantity: "Usable stock excludes reserved, blocked and expired batches. Confirm with the owner."}
+    quality: {not_null: [quantity, uom, status, expiry_date], non_negative: [quantity],
+              allowed_values: {uom: [EA, CS], status: [released, blocked, reserved, quality_inspection]},
+              iso_dates: [expiry_date]}
+    freshness: {max_age_hours: 24}
+    coverage: [product, warehouse]
+    lineage: SAP S/4HANA MM -> connector v1.4 -> snapshot id
+    human_approval: {domain: inventory}
+
+  ewm_bin_stock:
+    <<: *defaults
+    id: bin_stock
+    description: Physical bin stock per batch.
+    producer: SAP EWM team
+    ownership: {business_owner: Warehouse Operations, technical_owner: SAP EWM team, steward: Supply Chain Data team}
+    schema: {required_fields: [warehouse_id, bin_id, product_id, batch_id, quantity, bin_status],
+             unique_key: [warehouse_id, bin_id, batch_id]}
+    business_definitions: {bin_status: "Blocked bins cannot be picked."}
+    quality: {not_null: [quantity, bin_status], non_negative: [quantity], allowed_values: {bin_status: [available, blocked]}}
+    freshness: {max_age_hours: 24}
+    coverage: [warehouse]
+    lineage: SAP EWM -> connector v1.1 -> snapshot id
+    human_approval: {domain: warehouse}
+
+  tm_lanes:
+    <<: *defaults
+    id: transfer_lead_times_and_costs
+    description: Planned lead time and cost per unit for each warehouse lane.
+    producer: SAP TM team
+    ownership: {business_owner: Logistics, technical_owner: SAP TM team, steward: Supply Chain Data team}
+    schema: {required_fields: [origin_warehouse, destination_warehouse, lead_time_days, cost_per_unit_eur],
+             unique_key: [origin_warehouse, destination_warehouse]}
+    business_definitions: {lead_time_days: "Planned door-to-door days."}
+    quality: {not_null: [lead_time_days, cost_per_unit_eur], non_negative: [lead_time_days, cost_per_unit_eur]}
+    freshness: {max_age_hours: 720}
+    coverage: [lane]
+    lineage: SAP TM -> connector v1.0 -> monthly lane version
+    human_approval: {domain: logistics}
+
+  ibp_demand_forecast:
+    <<: *defaults
+    id: demand_forecast
+    description: Weekly unconstrained demand forecast.
+    producer: SAP IBP team
+    ownership: {business_owner: Demand Planning, technical_owner: SAP IBP team, steward: Supply Chain Data team}
+    schema: {required_fields: [product_id, warehouse_id, week_start, forecast_units],
+             unique_key: [product_id, warehouse_id, week_start]}
+    business_definitions: {forecast_units: "Unconstrained demand, units per week."}
+    quality: {not_null: [forecast_units], non_negative: [forecast_units], iso_dates: [week_start]}
+    freshness: {max_age_hours: 168}
+    coverage: [product, period]
+    lineage: SAP IBP -> export job v2.3 -> model version
+    human_approval: {domain: inventory}
+
+  s4_pp_orders:
+    <<: *defaults
+    id: production_orders
+    description: Planned and released production orders.
+    producer: SAP Integration team
+    ownership: {business_owner: Production Planning, technical_owner: SAP Integration team, steward: Supply Chain Data team}
+    schema: {required_fields: [order_id, product_id, quantity, due_date, status], unique_key: [order_id]}
+    business_definitions: {due_date: "Planned finish date at the plant."}
+    quality: {not_null: [quantity, due_date], non_negative: [quantity],
+              allowed_values: {status: [planned, released, confirmed]}, iso_dates: [due_date]}
+    freshness: {max_age_hours: 48}
+    coverage: [product]
+    lineage: SAP S/4HANA PP -> connector v1.4 -> snapshot id
+    human_approval: {domain: factory}
+
+  s4_sd_orders:
+    <<: *defaults
+    id: sales_orders
+    description: Open sales order lines.
+    producer: SAP Integration team
+    ownership: {business_owner: Sales Operations, technical_owner: SAP Integration team, steward: Supply Chain Data team}
+    schema: {required_fields: [order_id, product_id, warehouse_id, quantity, requested_date], unique_key: [order_id]}
+    business_definitions: {quantity: "Ordered units not yet delivered."}
+    quality: {not_null: [quantity, requested_date], non_negative: [quantity], iso_dates: [requested_date]}
+    freshness: {max_age_hours: 24}
+    coverage: [product]
+    lineage: SAP S/4HANA SD -> connector v1.4 -> snapshot id
+    human_approval: {domain: logistics}
+
+  ariba_pos:
+    <<: *defaults
+    id: open_purchase_orders
+    description: Purchase orders and expected delivery dates.
+    producer: SAP Ariba team
+    ownership: {business_owner: Procurement, technical_owner: SAP Ariba team, steward: Supply Chain Data team}
+    schema: {required_fields: [po_id, supplier_id, material_id, quantity, price_eur, due_date, status], unique_key: [po_id]}
+    business_definitions: {due_date: "Expected delivery date; may be empty until the supplier confirms."}
+    quality: {not_null: [quantity, price_eur, due_date], non_negative: [quantity, price_eur],
+              allowed_values: {status: [ordered, confirmed, delivered]}, iso_dates: [due_date]}
+    freshness: {max_age_hours: 72}
+    coverage: [all open purchase orders of the company code]
+    lineage: SAP Ariba -> connector v0.9 -> daily export id
+    human_approval: {domain: procurement}
+
+  qm_inspection_lots:
+    <<: *defaults
+    id: inspection_lots
+    description: Inspection results and usage decisions.
+    producer: SAP QM team
+    ownership: {business_owner: Quality, technical_owner: SAP QM team, steward: Supply Chain Data team}
+    schema: {required_fields: [lot_id, product_id, batch_id, usage_decision], unique_key: [lot_id]}
+    business_definitions: {usage_decision: "Only accepted lots may be used."}
+    quality: {not_null: [usage_decision], allowed_values: {usage_decision: [accepted, rejected, pending]}}
+    freshness: {max_age_hours: 72}
+    coverage: [product]
+    lineage: SAP QM -> connector v1.0 -> snapshot id
+    human_approval: {domain: quality}
+
+  mdg_material_master:
+    <<: *defaults
+    id: material_master
+    description: Governed product master data.
+    producer: SAP MDG team
+    ownership: {business_owner: Master Data Office, technical_owner: SAP MDG team, steward: Supply Chain Data team}
+    schema: {required_fields: [product_id, uom, shelf_life_days, status], unique_key: [product_id]}
+    business_definitions: {uom: "Base unit of measure used by every other asset."}
+    quality: {not_null: [uom, shelf_life_days], allowed_values: {uom: [EA, CS]}}
+    freshness: {max_age_hours: 2160}
+    coverage: [product]
+    lineage: SAP MDG -> connector v1.0 -> change request id
+    human_approval: {domain: master_data}
+
+  ariba_contracts:
+    <<: *defaults
+    id: supplier_agreements
+    description: Approved, currently valid supplier agreements and purchasing policy.
+    producer: Procurement team (SAP Ariba Contracts)
+    ownership: {business_owner: Procurement, technical_owner: Knowledge Platform team, steward: Supply Chain Data team}
+    schema: {required_fields: [doc_id, title, version, source_id, status, valid_from], unique_key: [doc_id]}
+    business_definitions: {status: "Only approved documents valid today may be used."}
+    quality: {not_null: [version, source_id, status, valid_from], iso_dates: [valid_from]}
+    freshness: {max_age_hours: 720}
+    coverage: [all approved supplier agreements and the purchasing policy]
+    lineage: SAP Ariba Contracts -> export job v1.0 -> RAG index v3
+    human_approval: {domain: procurement}

@@ -1,0 +1,215 @@
+# ODCS v3.1.0 data contract + catalog record for `ibp_demand_forecast` - SINGLE SOURCE OF TRUTH (edit this file).
+# Validated against the official ODCS JSON Schema at load time. SIMULATED SAP landscape, fictional owners.
+apiVersion: v3.1.0
+kind: DataContract
+id: demand_forecast
+version: '1.0'
+status: approved
+name: Weekly demand forecast
+domain: demand planning
+description:
+  purpose: Weekly unconstrained demand forecast.
+schema:
+- name: ibp_demand_forecast
+  physicalName: ibp_demand_forecast.csv
+  physicalType: file
+  logicalType: object
+  properties:
+  - name: product_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 1
+  - name: warehouse_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 2
+  - name: week_start
+    logicalType: date
+    physicalType: date
+    primaryKey: true
+    primaryKeyPosition: 3
+    quality:
+    - name: iso_dates
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        pattern: ^\d{4}-\d{2}-\d{2}$
+      mustBe: 0
+  - name: forecast_units
+    logicalType: integer
+    physicalType: integer
+    required: true
+    description: Unconstrained demand forecast, units
+    quality:
+    - name: non_negative
+      type: sql
+      dimension: conformity
+      mustBe: 0
+      query: SELECT COUNT(*) FROM ibp_demand_forecast WHERE forecast_units < 0
+  - name: model_version
+    logicalType: string
+    physicalType: string
+  description: Forecast units per product, warehouse and week.
+  dataGranularityDescription: one product per warehouse per week
+  customProperties:
+  - property: requiredFields
+    value:
+    - product_id
+    - warehouse_id
+    - week_start
+    - forecast_units
+  - property: uniqueKeyDeclared
+    value: true
+slaProperties:
+- property: latency
+  value: 168
+  unit: h
+  element: source_event_time
+  description: Maximum age of the source data (source event time) for any consumer.
+- property: retention
+  value: Keep 13 months; staging copies are deleted at the next extraction; derived outputs follow the source.
+team:
+  members:
+  - username: Demand Planning team (fictional)
+    role: owner
+  - username: SAP IBP team (fictional)
+    role: technical owner
+  - username: Supply Chain Data team (fictional)
+    role: data steward
+support:
+- channel: '#sc-data-support (fictional channel)'
+  tool: slack
+  scope: issues
+roles:
+- role: demand planners
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: planners
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: supply-chain director
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: agent:planning-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:procurement-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:supervisor-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+customProperties:
+- property: catalogLifecycleStatus
+  value: active
+- property: catalogOwnerReviewedOn
+  value: '2026-10-01'
+- property: catalogGeographicCoverage
+  value: France, Spain, Italy (warehouses WH-A Paris, WH-B Madrid, WH-C Milan)
+- property: catalogSourceSystem
+  value: SAP IBP
+- property: catalogSourceLocation
+  value: IBP planning area export
+- property: catalogSourceRecordId
+  value: product_id + warehouse_id + week_start
+- property: catalogTransformationHistory
+  value:
+  - weeks aligned to Monday start
+- property: catalogLineage
+  value:
+  - SAP IBP
+  - export job v2.3
+  - staging
+  - readiness gate
+  - planning agents
+- property: catalogChangeHistory
+  value:
+  - 2026-11-13 model ibp-baseline-2.3
+- property: catalogUnits
+  value: EA per week
+- property: catalogKnownLimitations
+  value:
+  - promotions not modelled
+- property: catalogApprovedUseCases
+  value:
+  - demand forecasting
+  - stock transfers
+  - replenishment
+- property: catalogClassification
+  value: internal
+- property: catalogPermittedPurposes
+  value:
+  - supply_chain_planning
+- property: contractConsumer
+  value: SCInsight planning agents (via the readiness gate)
+- property: contractPurpose
+  value:
+  - supply_chain_planning
+- property: contractSecurity
+  value:
+    external_model_processing: requires_approval
+- property: contractOperationalExpectations
+  value: Late or unavailable source -> alert the owner and block automated recommendations.
+- property: contractChangeManagement
+  value: The data owner approves breaking schema changes; consumers are notified 2 weeks ahead.
+- property: contractEvidence
+  value:
+    require_recent_validation: true
+    store_validation_run_id: true
+    store_source_snapshot_id: true
+- property: contractSourceRules
+  value:
+    snapshot_id_required: true
+    source_event_timestamp_required: true
+    ingestion_timestamp_required: true
+- property: contractProducer
+  value: SAP IBP team
+- property: contractOwnership
+  value:
+    business_owner: Demand Planning
+    technical_owner: SAP IBP team
+    steward: Supply Chain Data team
+- property: contractBusinessDefinitions
+  value:
+    forecast_units: Unconstrained demand, units per week.
+- property: contractCoverage
+  value:
+  - product
+  - period
+- property: contractLineage
+  value: SAP IBP -> export job v2.3 -> model version
+- property: contractHumanApproval
+  value:
+    domain: inventory
+- property: contractFreshnessExtra
+  value: {}
+- property: catalogKeysPresent
+  value:
+  - business_definitions
+  - business_domain
+  - business_owner
+  - contact
+  - data_steward
+  - description
+  - granularity
+  - name
+  - permitted_agents
+  - permitted_users
+  - retention
+  - schema_types
+  - technical_owner

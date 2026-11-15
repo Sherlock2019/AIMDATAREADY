@@ -1,0 +1,199 @@
+# TASK READINESS PROFILES (Data Harness Profiles), organised around the TASK:
+#
+#   Role: warehouse_manager
+#     ├── Task: compare_stock             └── Profile: compare_stock
+#     ├── Task: recommend_stock_transfer  └── Profile: recommend_stock_transfer
+#     └── Task: read_transfer_policy      └── Profile: read_transfer_policy
+#
+# Which roles may request which task: roles.yaml (`tasks:` per role, Role -> Task -> Profile).
+# SCInsight that match no task see every task. The engine compares two lists: ALLOWED data (what the user and the
+# agent may access for this task) and REQUIRED data (this profile). It never switches to a weaker profile.
+#
+# Per required asset:
+#   max_age_hours   overrides the contract freshness for this task
+#   coverage        context that must be present: product, warehouse (= origin + destination), lane, period
+#   rows            true = row-level ACL on the requested warehouses
+#   columns         restricted columns the task needs (column-level ACL, e.g. supplier prices)
+#   mandatory       false = a problem is a WARNING (agreed rule), not a block
+# Shared policy: missing required data, denied access, stale data, failed contract, unknown critical check -> BLOCKED.
+profiles:
+  - id: compare_stock
+    version: "1.0.0"
+    approved_by: [Inventory Operations]
+    agent: agent:planning-agent
+    name: Compare stock
+    output: stock comparison
+    question: How much usable stock of SKU-001 is in Warehouse A versus Warehouse C?
+    required_assets:
+      s4_mm_stock: {max_age_hours: 24, coverage: [product, warehouse], rows: true}
+    can_still_do: {}
+    actions: {compare_stock: allowed after checks}
+
+  - id: recommend_stock_transfer
+    version: "1.0.0"
+    approved_by: [Inventory Operations, Logistics]
+    agent: agent:planning-agent
+    name: Recommend a stock transfer
+    output: transfer recommendation
+    question: Which cosmetics products should we move from Warehouse A to Warehouse C next week?
+    required_assets:
+      s4_mm_stock: {max_age_hours: 2, coverage: [product, warehouse], rows: true}
+      ibp_demand_forecast: {coverage: [product, period], rows: true}
+      ariba_pos: {mandatory: false}
+      tm_lanes: {coverage: [lane]}
+    can_still_do: {"an inventory comparison WH-A vs WH-C, clearly labelled as not a transfer plan": [s4_mm_stock]}
+    actions: {create_recommendation: allowed after checks, execute_transfer: requires human approval}
+
+  - id: read_transfer_policy
+    version: "1.0.0"
+    approved_by: [Inventory Operations]
+    agent: agent:supervisor-agent
+    name: Read the transfer policy
+    output: cited policy answer
+    question: What does the warehouse transfer policy allow?
+    required_assets:
+      ariba_contracts: {}
+    can_still_do: {}
+    actions: {answer_with_citations: allowed after checks (retrieval must still find the passage)}
+
+  - id: recommend_replenishment
+    version: "1.0.0"
+    approved_by: [Procurement, Inventory Operations]
+    agent: agent:procurement-agent
+    name: Propose purchase orders (replenishment)
+    output: purchase order proposal
+    question: What should we reorder this week, from whom and at what price?
+    required_assets:
+      s4_mm_stock: {max_age_hours: 2, coverage: [product, warehouse], rows: true}
+      ibp_demand_forecast: {coverage: [product, period]}
+      ariba_pos: {columns: [price_eur]}
+      tm_lanes: {coverage: [lane]}
+      mdg_material_master: {coverage: [product]}
+    can_still_do: {"a stock-cover view per warehouse, not a purchase proposal": [s4_mm_stock, ibp_demand_forecast]}
+    actions: {create_proposal: allowed after checks, create_purchase_order: requires human approval}
+
+  - id: identify_supplier_risk
+    version: "1.0.0"
+    approved_by: [Procurement, Quality]
+    agent: agent:procurement-agent
+    name: Identify supplier risk
+    output: supplier risk assessment
+    question: Which suppliers put next month's production at risk?
+    required_assets:
+      ariba_pos: {}
+      qm_inspection_lots: {coverage: [product]}
+      ariba_contracts: {}
+    can_still_do: {"a list of open purchase orders, without a risk assessment": [ariba_pos]}
+    actions: {create_assessment: allowed after checks, change_supplier_status: requires human approval}
+
+  - id: supplier_policy_qa
+    version: "1.0.0"
+    approved_by: [Procurement]
+    agent: agent:supervisor-agent
+    name: Answer a supplier policy question
+    output: cited answer
+    question: What does the supplier agreement say about returns?
+    required_assets:
+      ariba_contracts: {}
+    can_still_do: {}
+    actions: {answer_with_citations: allowed after checks (retrieval must still find the passage)}
+
+  - id: forecast_demand
+    version: "1.0.0"
+    approved_by: [Demand Planning]
+    agent: agent:planning-agent
+    name: Forecast demand
+    output: demand forecast
+    question: What will SKU-001 sell per warehouse over the next four weeks?
+    required_assets:
+      s4_sd_orders: {coverage: [product]}
+      mdg_material_master: {coverage: [product]}
+      ibp_demand_forecast: {coverage: [product, period]}
+    can_still_do: {"the current IBP baseline forecast, without a new forecast": [ibp_demand_forecast]}
+    actions: {create_forecast: allowed after checks, publish_to_ibp: requires human approval}
+
+  - id: check_production_readiness
+    version: "1.0.0"
+    approved_by: [Production Planning]
+    agent: agent:planning-agent
+    name: Check production readiness
+    output: production readiness check
+    question: Can the planned production orders be produced and released on time?
+    required_assets:
+      s4_pp_orders: {max_age_hours: 48, coverage: [product]}
+      s4_mm_stock: {max_age_hours: 24, coverage: [product]}
+      qm_inspection_lots: {coverage: [product]}
+      mdg_material_master: {coverage: [product]}
+    can_still_do: {"the list of planned production orders, without a readiness verdict": [s4_pp_orders]}
+    actions: {release_production_order: requires human approval}
+
+  - id: review_batch_release
+    version: "1.0.0"
+    approved_by: [Quality]
+    agent: agent:supervisor-agent
+    name: Review batch release
+    output: batch release review
+    question: Which batches can be released, which are blocked or near expiry?
+    required_assets:
+      qm_inspection_lots: {coverage: [product]}
+      s4_mm_stock: {max_age_hours: 24, coverage: [product]}
+      mdg_material_master: {coverage: [product]}
+    can_still_do: {"the inspection results, without stock and shelf-life context": [qm_inspection_lots]}
+    actions: {release_batch: requires human approval}
+
+  - id: plan_shipments
+    version: "1.0.0"
+    approved_by: [Logistics]
+    agent: agent:planning-agent
+    name: Plan shipments
+    output: shipment plan
+    question: Which shipments and transfers are due, on which lane, at what cost?
+    required_assets:
+      tm_lanes: {coverage: [lane]}
+      s4_sd_orders: {max_age_hours: 24, coverage: [product]}
+      ewm_bin_stock: {max_age_hours: 24, coverage: [warehouse]}
+    can_still_do: {"open sales orders per warehouse, without lane planning": [s4_sd_orders]}
+    actions: {book_shipment: requires human approval}
+
+  - id: evaluate_forecast_model
+    version: "1.0.0"
+    approved_by: [Demand Planning]
+    agent: agent:planning-agent
+    name: Evaluate the forecast model
+    output: model evaluation dataset
+    question: Is the forecast and sales history fit to evaluate or retrain the demand model?
+    required_assets:
+      ibp_demand_forecast: {coverage: [product, period]}
+      s4_sd_orders: {coverage: [product]}
+      mdg_material_master: {coverage: [product]}
+    can_still_do: {}
+    actions: {train_model: allowed after checks, promote_model: requires human approval by the director}
+
+  - id: record_sap_execution
+    version: "1.0.0"
+    approved_by: [Supply-chain director]
+    agent: agent:supervisor-agent
+    name: Record SAP execution of an approved decision
+    output: SAP execution record
+    question: Can the approved transfer or purchase order be executed and recorded?
+    required_assets:
+      s4_mm_stock: {max_age_hours: 2, coverage: [product, warehouse]}
+      ariba_pos: {}
+    can_still_do: {}
+    actions: {post_in_sap: requires an approved decision and a human SAP key user}
+
+  - id: weekly_executive_report
+    version: "1.0.0"
+    approved_by: [Supply-chain director]
+    agent: agent:supervisor-agent
+    name: Weekly executive report
+    output: management report
+    question: How did stock, production and sales develop this week?
+    required_assets:
+      s4_mm_stock: {max_age_hours: 48, coverage: [warehouse]}
+      ewm_bin_stock: {max_age_hours: 48, coverage: [warehouse]}
+      s4_pp_orders: {max_age_hours: 72}
+      s4_sd_orders: {max_age_hours: 48}
+      ibp_demand_forecast: {}
+    can_still_do: {"the sections whose data passed, marked incomplete": [s4_mm_stock]}
+    actions: {create_report: allowed after checks}

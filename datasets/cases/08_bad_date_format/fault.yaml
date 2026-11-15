@@ -1,0 +1,7 @@
+title: Expiry dates in DD/MM/YYYY
+injected_fault: SKU-001 expiry dates in WH-A and WH-C were exported as DD/MM/YYYY
+  (the export declares this format).
+expected_detection:
+- inventory:quality
+expected_fix:
+- reformat_dates

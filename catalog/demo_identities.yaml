@@ -1,0 +1,41 @@
+# DEMO IDENTITIES: synthetic users and agents with DEMO permissions.
+# A request selects one by name ("demo_identity": {"user": "planner_all", "agent": "scinsight_supervisor"}).
+# Anyone can send any name, so this is NOT authentication. It exists only to demonstrate the decision logic.
+notice: Synthetic identities and demo permissions. Not authentication, not production ACLs.
+
+users:
+  planner_all:
+    user_id: demo-user-planner-all
+    description: Planner scoped to all three demo warehouses.
+    roles: [planner]
+    warehouse_scope: [WH-A, WH-B, WH-C]
+    purposes: [inventory_planning, policy_lookup]
+  planner_ab:
+    user_id: demo-user-planner-ab
+    description: Planner scoped to warehouses A and B only (row-level scope demo).
+    roles: [planner]
+    warehouse_scope: [WH-A, WH-B]
+    purposes: [inventory_planning, policy_lookup]
+  policy_reader:
+    user_id: demo-user-policy-reader
+    description: May read policy documents, not inventory.
+    roles: [policy_reader]
+    purposes: [policy_lookup]
+  finance_controller:
+    user_id: demo-user-finance
+    description: May read restricted finance policies.
+    roles: [finance_controller]
+    purposes: [policy_lookup]
+  contractor:
+    user_id: demo-user-contractor
+    description: No data permissions.
+    roles: [contractor]
+    purposes: []
+
+agents:
+  scinsight_supervisor:
+    agent_id: demo-agent-scinsight-supervisor
+    description: Stands for the SCInsight Flowise Supervisor calling on a user's behalf.
+  untrusted_agent:
+    agent_id: demo-agent-untrusted
+    description: A registered agent with no data permissions.

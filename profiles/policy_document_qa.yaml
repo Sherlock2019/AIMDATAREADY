@@ -1,0 +1,29 @@
+# Task profile: answer a question from approved company policy documents (RAG).
+# Passing this preflight does NOT mean the retriever found an answer: post_retrieval_check_required tells the caller
+# that a post-retrieval evidence check must still confirm the retrieved passages are sufficient.
+task_id: policy_document_qa
+version: "1.0.0"
+description: Answer a question using approved, currently valid policy documents the caller may read.
+purpose: policy_lookup
+demo_values_note: >
+  DEMO VALUES. "At least one usable document" and the block choices below are demo settings, not universal
+  requirements. A real deployment decides them with the document owners.
+allow_warnings: false
+post_retrieval_check_required: true
+
+required_context: []
+
+assets:
+  - name: approved_policy_documents
+    asset_id: policy_documents
+    mandatory: true
+    access:
+      require_agent_access: true
+    documents:
+      require_status: approved
+      require_valid_on_evaluation_date: true
+      require_version_and_source_id: true
+      min_usable_documents: 1
+    provenance:
+      required_fields: [business_owner, source_version]
+      on_missing: block

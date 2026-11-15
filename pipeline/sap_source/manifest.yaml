@@ -1,0 +1,64 @@
+dataset: sap_source
+synthetic: true
+notice: SIMULATED SAP systems of record.
+assets:
+  ariba_contracts:
+    file: ariba_contracts.csv
+    source_name: SIMULATED ariba_contracts
+    source_version: ARIBA-CONTRACTS-2026-11-02
+    source_event_time: '2026-11-02T00:00:00+00:00'
+    ingested_at: '2026-11-02T03:00:00+00:00'
+  s4_mm_stock:
+    file: s4_mm_stock.csv
+    source_name: SIMULATED s4_mm_stock
+    source_version: S4-MM-2026-11-14
+    source_event_time: '2026-11-14T06:00:00+00:00'
+    ingested_at: '2026-11-14T06:20:00+00:00'
+  ewm_bin_stock:
+    file: ewm_bin_stock.csv
+    source_name: SIMULATED ewm_bin_stock
+    source_version: EWM-2026-11-14
+    source_event_time: '2026-11-14T07:00:00+00:00'
+    ingested_at: '2026-11-14T07:05:00+00:00'
+  tm_lanes:
+    file: tm_lanes.csv
+    source_name: SIMULATED tm_lanes
+    source_version: TM-LANES-2026-11
+    source_event_time: '2026-11-01T00:00:00+00:00'
+    ingested_at: '2026-11-01T02:00:00+00:00'
+  ibp_demand_forecast:
+    file: ibp_demand_forecast.csv
+    source_name: SIMULATED ibp_demand_forecast
+    source_version: IBP-2026-W46
+    source_event_time: '2026-11-13T00:00:00+00:00'
+    ingested_at: '2026-11-13T01:00:00+00:00'
+  s4_pp_orders:
+    file: s4_pp_orders.csv
+    source_name: SIMULATED s4_pp_orders
+    source_version: S4-PP-2026-11-14
+    source_event_time: '2026-11-14T05:00:00+00:00'
+    ingested_at: '2026-11-14T05:10:00+00:00'
+  s4_sd_orders:
+    file: s4_sd_orders.csv
+    source_name: SIMULATED s4_sd_orders
+    source_version: S4-SD-2026-11-14
+    source_event_time: '2026-11-14T06:30:00+00:00'
+    ingested_at: '2026-11-14T06:35:00+00:00'
+  ariba_pos:
+    file: ariba_pos.csv
+    source_name: SIMULATED ariba_pos
+    source_version: ARIBA-2026-11-13
+    source_event_time: '2026-11-13T20:00:00+00:00'
+    ingested_at: '2026-11-13T20:30:00+00:00'
+  qm_inspection_lots:
+    file: qm_inspection_lots.csv
+    source_name: SIMULATED qm_inspection_lots
+    source_version: QM-2026-11-14
+    source_event_time: '2026-11-14T04:00:00+00:00'
+    ingested_at: '2026-11-14T04:10:00+00:00'
+  mdg_material_master:
+    file: mdg_material_master.csv
+    source_name: SIMULATED mdg_material_master
+    source_version: MDG-2026-10-30
+    source_event_time: '2026-10-30T00:00:00+00:00'
+    ingested_at: '2026-10-30T01:00:00+00:00'

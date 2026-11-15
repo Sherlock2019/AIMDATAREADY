@@ -1,0 +1,250 @@
+# ODCS v3.1.0 data contract + catalog record for `s4_mm_stock` - SINGLE SOURCE OF TRUTH (edit this file).
+# Validated against the official ODCS JSON Schema at load time. SIMULATED SAP landscape, fictional owners.
+apiVersion: v3.1.0
+kind: DataContract
+id: inventory_snapshot
+version: '1.0'
+status: approved
+name: Inventory snapshot (stock by batch)
+domain: inventory
+description:
+  purpose: Inventory available by product and warehouse for planning tasks.
+schema:
+- name: s4_mm_stock
+  physicalName: s4_mm_stock.csv
+  physicalType: file
+  logicalType: object
+  properties:
+  - name: product_id
+    logicalType: string
+    physicalType: string
+  - name: warehouse_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 1
+  - name: batch_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 2
+  - name: quantity
+    logicalType: integer
+    physicalType: integer
+    required: true
+    description: Stock in the batch, base unit. Usable stock = released, not expired, not reserved.
+    quality:
+    - name: non_negative
+      type: sql
+      dimension: conformity
+      mustBe: 0
+      query: SELECT COUNT(*) FROM s4_mm_stock WHERE quantity < 0
+  - name: uom
+    logicalType: string
+    physicalType: string
+    required: true
+    quality:
+    - name: allowed_values
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        validValues:
+        - EA
+        - CS
+      mustBe: 0
+  - name: status
+    logicalType: string
+    physicalType: string
+    required: true
+    description: released | blocked | reserved | quality_inspection
+    quality:
+    - name: allowed_values
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        validValues:
+        - released
+        - blocked
+        - reserved
+        - quality_inspection
+      mustBe: 0
+  - name: expiry_date
+    logicalType: date
+    physicalType: date
+    required: true
+    quality:
+    - name: iso_dates
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        pattern: ^\d{4}-\d{2}-\d{2}$
+      mustBe: 0
+  description: Stock on hand by product, warehouse and batch, with release status and expiry date.
+  dataGranularityDescription: one batch per warehouse per snapshot
+  customProperties:
+  - property: requiredFields
+    value:
+    - product_id
+    - warehouse_id
+    - batch_id
+    - quantity
+    - uom
+    - status
+    - expiry_date
+  - property: uniqueKeyDeclared
+    value: true
+slaProperties:
+- property: latency
+  value: 24
+  unit: h
+  element: source_event_time
+  description: Maximum age of the source data (source event time) for any consumer.
+- property: retention
+  value: Keep 13 months; staging copies are deleted at the next extraction; derived outputs follow the source.
+team:
+  members:
+  - username: Inventory Operations team (fictional)
+    role: owner
+  - username: SAP Integration team (fictional)
+    role: technical owner
+  - username: Supply Chain Data team (fictional)
+    role: data steward
+support:
+- channel: '#sc-data-support (fictional channel)'
+  tool: slack
+  scope: issues
+roles:
+- role: planners
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: warehouse managers
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: supply-chain director
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: agent:planning-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:procurement-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:supervisor-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+customProperties:
+- property: catalogLifecycleStatus
+  value: active
+- property: catalogOwnerReviewedOn
+  value: '2026-10-01'
+- property: catalogGeographicCoverage
+  value: France, Spain, Italy (warehouses WH-A Paris, WH-B Madrid, WH-C Milan)
+- property: catalogSourceSystem
+  value: SAP S/4HANA MM
+- property: catalogSourceLocation
+  value: API_MATERIAL_STOCK_SRV (approved inventory API)
+- property: catalogSourceRecordId
+  value: batch_id + warehouse_id
+- property: catalogTransformationHistory
+  value:
+  - standardised warehouse IDs (plant/storage location -> WH-x)
+  - quantities in base unit EA
+- property: catalogLineage
+  value:
+  - SAP S/4HANA MM
+  - connector v1.4
+  - staging
+  - readiness gate
+  - planning agents
+- property: catalogChangeHistory
+  value:
+  - '2026-09-12 contract v1.2: expiry_date became required'
+- property: catalogUnits
+  value: EA (each)
+- property: catalogKnownLimitations
+  value:
+  - one snapshot per day; intraday movements are not visible
+- property: catalogApprovedUseCases
+  value:
+  - inventory planning
+  - stock transfers
+  - replenishment
+  - executive reporting
+- property: catalogClassification
+  value: internal
+- property: catalogPermittedPurposes
+  value:
+  - supply_chain_planning
+- property: contractConsumer
+  value: SCInsight planning agents (via the readiness gate)
+- property: contractPurpose
+  value:
+  - supply_chain_planning
+- property: contractSecurity
+  value:
+    external_model_processing: requires_approval
+- property: contractOperationalExpectations
+  value: Late or unavailable source -> alert the owner and block automated recommendations.
+- property: contractChangeManagement
+  value: The data owner approves breaking schema changes; consumers are notified 2 weeks ahead.
+- property: contractEvidence
+  value:
+    require_recent_validation: true
+    store_validation_run_id: true
+    store_source_snapshot_id: true
+- property: contractSourceRules
+  value:
+    snapshot_id_required: true
+    source_event_timestamp_required: true
+    ingestion_timestamp_required: true
+- property: contractProducer
+  value: SAP Integration team
+- property: contractOwnership
+  value:
+    business_owner: Inventory Operations
+    technical_owner: SAP Integration team
+    steward: Supply Chain Data team
+- property: contractBusinessDefinitions
+  value:
+    quantity: Usable stock excludes reserved, blocked and expired batches. Confirm with the owner.
+- property: contractCoverage
+  value:
+  - product
+  - warehouse
+- property: contractLineage
+  value: SAP S/4HANA MM -> connector v1.4 -> snapshot id
+- property: contractHumanApproval
+  value:
+    domain: inventory
+- property: contractFreshnessExtra
+  value: {}
+- property: catalogKeysPresent
+  value:
+  - business_definitions
+  - business_domain
+  - business_owner
+  - contact
+  - data_steward
+  - description
+  - granularity
+  - name
+  - permitted_agents
+  - permitted_users
+  - retention
+  - schema_types
+  - technical_owner

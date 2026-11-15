@@ -1,0 +1,6 @@
+title: Negative stock quantities
+injected_fault: Two batches have negative quantities.
+expected_detection:
+- inventory:quality
+expected_fix:
+- replace_bad_rows_from_source

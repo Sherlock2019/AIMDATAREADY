@@ -1,0 +1,1625 @@
+{
+ "nodes": [
+  {
+   "id": "startAgentflow_0",
+   "type": "agentFlow",
+   "position": {
+    "x": 0,
+    "y": 80
+   },
+   "positionAbsolute": {
+    "x": 0,
+    "y": 80
+   },
+   "data": {
+    "id": "startAgentflow_0",
+    "label": "Start · choose role and faults",
+    "version": 1.1,
+    "name": "startAgentflow",
+    "type": "Start",
+    "color": "#7EE787",
+    "hideInput": true,
+    "baseClasses": [
+     "Start"
+    ],
+    "category": "Agent Flows",
+    "description": "Starting point of the agentflow",
+    "inputParams": [
+     {
+      "label": "Input Type",
+      "name": "startInputType",
+      "type": "options",
+      "options": [
+       {
+        "label": "Chat Input",
+        "name": "chatInput",
+        "description": "Start the conversation with chat input"
+       },
+       {
+        "label": "Form Input",
+        "name": "formInput",
+        "description": "Start the workflow with form inputs"
+       }
+      ],
+      "default": "chatInput",
+      "id": "startAgentflow_0-input-startInputType-options",
+      "display": true
+     },
+     {
+      "label": "Form Title",
+      "name": "formTitle",
+      "type": "string",
+      "placeholder": "Please Fill Out The Form",
+      "show": {
+       "startInputType": "formInput"
+      },
+      "id": "startAgentflow_0-input-formTitle-string",
+      "display": false
+     },
+     {
+      "label": "Form Description",
+      "name": "formDescription",
+      "type": "string",
+      "placeholder": "Complete all fields below to continue",
+      "show": {
+       "startInputType": "formInput"
+      },
+      "id": "startAgentflow_0-input-formDescription-string",
+      "display": false
+     },
+     {
+      "label": "Form Input Types",
+      "name": "formInputTypes",
+      "description": "Specify the type of form input",
+      "type": "array",
+      "show": {
+       "startInputType": "formInput"
+      },
+      "array": [
+       {
+        "label": "Type",
+        "name": "type",
+        "type": "options",
+        "options": [
+         {
+          "label": "String",
+          "name": "string"
+         },
+         {
+          "label": "Number",
+          "name": "number"
+         },
+         {
+          "label": "Boolean",
+          "name": "boolean"
+         },
+         {
+          "label": "Options",
+          "name": "options"
+         }
+        ],
+        "default": "string"
+       },
+       {
+        "label": "Label",
+        "name": "label",
+        "type": "string",
+        "placeholder": "Label for the input"
+       },
+       {
+        "label": "Variable Name",
+        "name": "name",
+        "type": "string",
+        "placeholder": "Variable name for the input (must be camel case)",
+        "description": "Variable name must be camel case. For example: firstName, lastName, etc."
+       },
+       {
+        "label": "Add Options",
+        "name": "addOptions",
+        "type": "array",
+        "show": {
+         "formInputTypes[$index].type": "options"
+        },
+        "array": [
+         {
+          "label": "Option",
+          "name": "option",
+          "type": "string"
+         }
+        ]
+       }
+      ],
+      "id": "startAgentflow_0-input-formInputTypes-array",
+      "display": false
+     },
+     {
+      "label": "Ephemeral Memory",
+      "name": "startEphemeralMemory",
+      "type": "boolean",
+      "description": "Start fresh for every execution without past chat history",
+      "optional": true,
+      "id": "startAgentflow_0-input-startEphemeralMemory-boolean",
+      "display": true
+     },
+     {
+      "label": "Flow State",
+      "name": "startState",
+      "description": "Runtime state during the execution of the workflow",
+      "type": "array",
+      "optional": true,
+      "array": [
+       {
+        "label": "Key",
+        "name": "key",
+        "type": "string",
+        "placeholder": "Foo"
+       },
+       {
+        "label": "Value",
+        "name": "value",
+        "type": "string",
+        "placeholder": "Bar",
+        "optional": true
+       }
+      ],
+      "id": "startAgentflow_0-input-startState-array",
+      "display": true
+     },
+     {
+      "label": "Persist State",
+      "name": "startPersistState",
+      "type": "boolean",
+      "description": "Persist the state in the same session",
+      "optional": true,
+      "id": "startAgentflow_0-input-startPersistState-boolean",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "startInputType": "formInput",
+     "formTitle": "Data readiness round",
+     "formDescription": "Pick a task, a role from the supply-chain apps, and the faults in the SAP extraction.",
+     "formInputTypes": [
+      {
+       "type": "options",
+       "label": "Requested task (my_role = the first task of the role below; each task has one readiness profile)",
+       "name": "task",
+       "addOptions": [
+        {
+         "option": "my_role"
+        },
+        {
+         "option": "compare_stock"
+        },
+        {
+         "option": "recommend_stock_transfer"
+        },
+        {
+         "option": "read_transfer_policy"
+        },
+        {
+         "option": "recommend_replenishment"
+        },
+        {
+         "option": "identify_supplier_risk"
+        },
+        {
+         "option": "supplier_policy_qa"
+        },
+        {
+         "option": "forecast_demand"
+        },
+        {
+         "option": "check_production_readiness"
+        },
+        {
+         "option": "review_batch_release"
+        },
+        {
+         "option": "plan_shipments"
+        },
+        {
+         "option": "evaluate_forecast_model"
+        },
+        {
+         "option": "record_sap_execution"
+        },
+        {
+         "option": "weekly_executive_report"
+        }
+       ]
+      },
+      {
+       "type": "options",
+       "label": "Role (all roles in ~/Supplychain-AI-agent)",
+       "name": "role",
+       "addOptions": [
+        {
+         "option": "scinsight:planner"
+        },
+        {
+         "option": "scinsight:production_planner"
+        },
+        {
+         "option": "scinsight:procurement_manager"
+        },
+        {
+         "option": "scinsight:warehouse_manager"
+        },
+        {
+         "option": "scinsight:logistics_manager"
+        },
+        {
+         "option": "scinsight:quality_manager"
+        },
+        {
+         "option": "scinsight:supply_chain_director"
+        },
+        {
+         "option": "scinsight:agent_service"
+        },
+        {
+         "option": "scinsight:mlops_engineer"
+        },
+        {
+         "option": "scinsight:sap_executor"
+        },
+        {
+         "option": "aurelia:director"
+        },
+        {
+         "option": "aurelia:demand"
+        },
+        {
+         "option": "aurelia:production"
+        },
+        {
+         "option": "aurelia:procurement"
+        },
+        {
+         "option": "aurelia:warehouse"
+        },
+        {
+         "option": "aurelia:logistics"
+        },
+        {
+         "option": "aurelia:quality"
+        },
+        {
+         "option": "aurelia:finance"
+        },
+        {
+         "option": "aurelia:mlops"
+        },
+        {
+         "option": "harness:agent_runtime"
+        },
+        {
+         "option": "harness:planner"
+        },
+        {
+         "option": "harness:supply_reviewer"
+        },
+        {
+         "option": "harness:profile_author"
+        },
+        {
+         "option": "harness:profile_admin"
+        },
+        {
+         "option": "harness:auditor"
+        },
+        {
+         "option": "knowledge:kp_viewer"
+        },
+        {
+         "option": "knowledge:kp_editor"
+        },
+        {
+         "option": "knowledge:kp_admin"
+        }
+       ]
+      },
+      {
+       "type": "options",
+       "label": "Faults in the SAP extraction",
+       "name": "faults",
+       "addOptions": [
+        {
+         "option": "all"
+        },
+        {
+         "option": "none"
+        },
+        {
+         "option": "mm_stale"
+        },
+        {
+         "option": "mm_bad_status"
+        },
+        {
+         "option": "mm_unit_mismatch"
+        },
+        {
+         "option": "ewm_missing_wh_c"
+        },
+        {
+         "option": "tm_missing_lane"
+        },
+        {
+         "option": "ibp_short_horizon"
+        },
+        {
+         "option": "pp_negative_qty"
+        },
+        {
+         "option": "sd_bad_dates"
+        },
+        {
+         "option": "ariba_missing_dates"
+        },
+        {
+         "option": "ariba_duplicates"
+        },
+        {
+         "option": "qm_null_decision"
+        },
+        {
+         "option": "mdg_missing_owner"
+        },
+        {
+         "option": "mdg_catalog_incomplete"
+        },
+        {
+         "option": "contract_expired"
+        },
+        {
+         "option": "authz_down"
+        }
+       ]
+      }
+     ],
+     "startEphemeralMemory": true,
+     "startState": [
+      {
+       "key": "extract",
+       "value": ""
+      },
+      {
+       "key": "detect",
+       "value": ""
+      },
+      {
+       "key": "table",
+       "value": ""
+      },
+      {
+       "key": "ready",
+       "value": ""
+      },
+      {
+       "key": "proposals",
+       "value": ""
+      },
+      {
+       "key": "result",
+       "value": ""
+      }
+     ],
+     "startPersistState": false
+    },
+    "outputAnchors": [
+     {
+      "id": "startAgentflow_0-output-startAgentflow",
+      "label": "Start",
+      "name": "startAgentflow"
+     }
+    ],
+    "outputs": {},
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "customFunctionAgentflow_0",
+   "type": "agentFlow",
+   "position": {
+    "x": 340,
+    "y": 80
+   },
+   "positionAbsolute": {
+    "x": 340,
+    "y": 80
+   },
+   "data": {
+    "id": "customFunctionAgentflow_0",
+    "label": "1 · Extract from SAP (simulated)",
+    "version": 1.1,
+    "name": "customFunctionAgentflow",
+    "type": "CustomFunction",
+    "color": "#E4B7FF",
+    "baseClasses": [
+     "CustomFunction"
+    ],
+    "category": "Agent Flows",
+    "description": "Execute custom function",
+    "inputParams": [
+     {
+      "label": "Input Variables",
+      "name": "customFunctionInputVariables",
+      "description": "Input variables can be used in the function with prefix $. For example: $foo",
+      "type": "array",
+      "optional": true,
+      "acceptVariable": true,
+      "array": [
+       {
+        "label": "Variable Name",
+        "name": "variableName",
+        "type": "string"
+       },
+       {
+        "label": "Variable Value",
+        "name": "variableValue",
+        "type": "string",
+        "acceptVariable": true
+       }
+      ],
+      "id": "customFunctionAgentflow_0-input-customFunctionInputVariables-array",
+      "display": true
+     },
+     {
+      "label": "Javascript Function",
+      "name": "customFunctionJavascriptFunction",
+      "type": "code",
+      "codeExample": "/*\n* You can use any libraries imported in Flowise\n* You can use properties specified in Input Variables with the prefix $. For example: $foo\n* You can get default flow config: $flow.sessionId, $flow.chatId, $flow.chatflowId, $flow.input, $flow.state\n* You can get global variables: $vars.<variable-name>\n* Must return a string value at the end of function\n*/\n\nconst fetch = require('node-fetch');\nconst url = 'https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current_weather=true';\nconst options = {\n    method: 'GET',\n    headers: {\n        'Content-Type': 'application/json'\n    }\n};\ntry {\n    const response = await fetch(url, options);\n    const text = await response.text();\n    return text;\n} catch (error) {\n    console.error(error);\n    return '';\n}",
+      "description": "The function to execute. Must return a string or an object that can be converted to a string.",
+      "id": "customFunctionAgentflow_0-input-customFunctionJavascriptFunction-code",
+      "display": true
+     },
+     {
+      "label": "Update Flow State",
+      "name": "customFunctionUpdateState",
+      "description": "Update runtime state during the execution of the workflow",
+      "type": "array",
+      "optional": true,
+      "acceptVariable": true,
+      "array": [
+       {
+        "label": "Key",
+        "name": "key",
+        "type": "asyncOptions",
+        "loadMethod": "listRuntimeStateKeys"
+       },
+       {
+        "label": "Value",
+        "name": "value",
+        "type": "string",
+        "acceptVariable": true,
+        "acceptNodeOutputAsVariable": true
+       }
+      ],
+      "id": "customFunctionAgentflow_0-input-customFunctionUpdateState-array",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "customFunctionInputVariables": [
+      {
+       "variableName": "faults",
+       "variableValue": "{{ $form.faults }}"
+      }
+     ],
+     "customFunctionJavascriptFunction": "const fetch = require('node-fetch')\nconst BASE = 'http://127.0.0.1:8460'\nconst call = async (path, body) => {\n    try {\n        const res = await fetch(BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json' },\n            body: JSON.stringify(body), timeout: 30000 })\n        const data = await res.json()\n        if (!res.ok) return { ok: false, text: 'Error: ' + ((data.error && data.error.message) || res.status) }\n        return { ok: true, ...data }\n    } catch (e) {\n        return { ok: false, text: 'API unreachable at ' + BASE + ' (' + e.message + '). Run ./start.sh --bg' }\n    }\n}\nconst r = await call('/pipeline/extract', { faults: String($faults || 'all') })\nreturn JSON.stringify({ extract: r.text })",
+     "customFunctionUpdateState": [
+      {
+       "key": "extract",
+       "value": "{{ output.extract }}"
+      }
+     ]
+    },
+    "outputAnchors": [
+     {
+      "id": "customFunctionAgentflow_0-output-customFunctionAgentflow",
+      "label": "Custom Function",
+      "name": "customFunctionAgentflow"
+     }
+    ],
+    "outputs": {},
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "customFunctionAgentflow_1",
+   "type": "agentFlow",
+   "position": {
+    "x": 680,
+    "y": 80
+   },
+   "positionAbsolute": {
+    "x": 680,
+    "y": 80
+   },
+   "data": {
+    "id": "customFunctionAgentflow_1",
+    "label": "2 · Data Harness check (detect)",
+    "version": 1.1,
+    "name": "customFunctionAgentflow",
+    "type": "CustomFunction",
+    "color": "#E4B7FF",
+    "baseClasses": [
+     "CustomFunction"
+    ],
+    "category": "Agent Flows",
+    "description": "Execute custom function",
+    "inputParams": [
+     {
+      "label": "Input Variables",
+      "name": "customFunctionInputVariables",
+      "description": "Input variables can be used in the function with prefix $. For example: $foo",
+      "type": "array",
+      "optional": true,
+      "acceptVariable": true,
+      "array": [
+       {
+        "label": "Variable Name",
+        "name": "variableName",
+        "type": "string"
+       },
+       {
+        "label": "Variable Value",
+        "name": "variableValue",
+        "type": "string",
+        "acceptVariable": true
+       }
+      ],
+      "id": "customFunctionAgentflow_0-input-customFunctionInputVariables-array",
+      "display": true
+     },
+     {
+      "label": "Javascript Function",
+      "name": "customFunctionJavascriptFunction",
+      "type": "code",
+      "codeExample": "/*\n* You can use any libraries imported in Flowise\n* You can use properties specified in Input Variables with the prefix $. For example: $foo\n* You can get default flow config: $flow.sessionId, $flow.chatId, $flow.chatflowId, $flow.input, $flow.state\n* You can get global variables: $vars.<variable-name>\n* Must return a string value at the end of function\n*/\n\nconst fetch = require('node-fetch');\nconst url = 'https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current_weather=true';\nconst options = {\n    method: 'GET',\n    headers: {\n        'Content-Type': 'application/json'\n    }\n};\ntry {\n    const response = await fetch(url, options);\n    const text = await response.text();\n    return text;\n} catch (error) {\n    console.error(error);\n    return '';\n}",
+      "description": "The function to execute. Must return a string or an object that can be converted to a string.",
+      "id": "customFunctionAgentflow_0-input-customFunctionJavascriptFunction-code",
+      "display": true
+     },
+     {
+      "label": "Update Flow State",
+      "name": "customFunctionUpdateState",
+      "description": "Update runtime state during the execution of the workflow",
+      "type": "array",
+      "optional": true,
+      "acceptVariable": true,
+      "array": [
+       {
+        "label": "Key",
+        "name": "key",
+        "type": "asyncOptions",
+        "loadMethod": "listRuntimeStateKeys"
+       },
+       {
+        "label": "Value",
+        "name": "value",
+        "type": "string",
+        "acceptVariable": true,
+        "acceptNodeOutputAsVariable": true
+       }
+      ],
+      "id": "customFunctionAgentflow_0-input-customFunctionUpdateState-array",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "customFunctionInputVariables": [
+      {
+       "variableName": "role",
+       "variableValue": "{{ $form.role }}"
+      },
+      {
+       "variableName": "task",
+       "variableValue": "{{ $form.task }}"
+      }
+     ],
+     "customFunctionJavascriptFunction": "const fetch = require('node-fetch')\nconst BASE = 'http://127.0.0.1:8460'\nconst call = async (path, body) => {\n    try {\n        const res = await fetch(BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json' },\n            body: JSON.stringify(body), timeout: 30000 })\n        const data = await res.json()\n        if (!res.ok) return { ok: false, text: 'Error: ' + ((data.error && data.error.message) || res.status) }\n        return { ok: true, ...data }\n    } catch (e) {\n        return { ok: false, text: 'API unreachable at ' + BASE + ' (' + e.message + '). Run ./start.sh --bg' }\n    }\n}\nconst r = await call('/pipeline/check', { role: String($role), task: String($task) })\nreturn JSON.stringify({ detect: r.text, table: r.table || '', ready: r.ok && r.ready ? 'yes' : 'no' })",
+     "customFunctionUpdateState": [
+      {
+       "key": "detect",
+       "value": "{{ output.detect }}"
+      },
+      {
+       "key": "table",
+       "value": "{{ output.table }}"
+      },
+      {
+       "key": "ready",
+       "value": "{{ output.ready }}"
+      }
+     ]
+    },
+    "outputAnchors": [
+     {
+      "id": "customFunctionAgentflow_1-output-customFunctionAgentflow",
+      "label": "Custom Function",
+      "name": "customFunctionAgentflow"
+     }
+    ],
+    "outputs": {},
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "conditionAgentflow_0",
+   "type": "agentFlow",
+   "position": {
+    "x": 1020,
+    "y": 80
+   },
+   "positionAbsolute": {
+    "x": 1020,
+    "y": 80
+   },
+   "data": {
+    "id": "conditionAgentflow_0",
+    "label": "Data ready?",
+    "version": 1,
+    "name": "conditionAgentflow",
+    "type": "Condition",
+    "color": "#FFB938",
+    "baseClasses": [
+     "Condition"
+    ],
+    "category": "Agent Flows",
+    "description": "Split flows based on If Else conditions",
+    "inputParams": [
+     {
+      "label": "Conditions",
+      "name": "conditions",
+      "type": "array",
+      "description": "Values to compare",
+      "acceptVariable": true,
+      "default": [
+       {
+        "type": "string",
+        "value1": "",
+        "operation": "equal",
+        "value2": ""
+       }
+      ],
+      "array": [
+       {
+        "label": "Type",
+        "name": "type",
+        "type": "options",
+        "options": [
+         {
+          "label": "String",
+          "name": "string"
+         },
+         {
+          "label": "Number",
+          "name": "number"
+         },
+         {
+          "label": "Boolean",
+          "name": "boolean"
+         }
+        ],
+        "default": "string"
+       },
+       {
+        "label": "Value 1",
+        "name": "value1",
+        "type": "string",
+        "default": "",
+        "description": "First value to be compared with",
+        "acceptVariable": true,
+        "show": {
+         "conditions[$index].type": "string"
+        }
+       },
+       {
+        "label": "Operation",
+        "name": "operation",
+        "type": "options",
+        "options": [
+         {
+          "label": "Contains",
+          "name": "contains"
+         },
+         {
+          "label": "Ends With",
+          "name": "endsWith"
+         },
+         {
+          "label": "Equal",
+          "name": "equal"
+         },
+         {
+          "label": "Not Contains",
+          "name": "notContains"
+         },
+         {
+          "label": "Not Equal",
+          "name": "notEqual"
+         },
+         {
+          "label": "Regex",
+          "name": "regex"
+         },
+         {
+          "label": "Starts With",
+          "name": "startsWith"
+         },
+         {
+          "label": "Is Empty",
+          "name": "isEmpty"
+         },
+         {
+          "label": "Not Empty",
+          "name": "notEmpty"
+         }
+        ],
+        "default": "equal",
+        "description": "Type of operation",
+        "show": {
+         "conditions[$index].type": "string"
+        }
+       },
+       {
+        "label": "Value 2",
+        "name": "value2",
+        "type": "string",
+        "default": "",
+        "description": "Second value to be compared with",
+        "acceptVariable": true,
+        "show": {
+         "conditions[$index].type": "string"
+        },
+        "hide": {
+         "conditions[$index].operation": [
+          "isEmpty",
+          "notEmpty"
+         ]
+        }
+       },
+       {
+        "label": "Value 1",
+        "name": "value1",
+        "type": "number",
+        "default": "",
+        "description": "First value to be compared with",
+        "acceptVariable": true,
+        "show": {
+         "conditions[$index].type": "number"
+        }
+       },
+       {
+        "label": "Operation",
+        "name": "operation",
+        "type": "options",
+        "options": [
+         {
+          "label": "Smaller",
+          "name": "smaller"
+         },
+         {
+          "label": "Smaller Equal",
+          "name": "smallerEqual"
+         },
+         {
+          "label": "Equal",
+          "name": "equal"
+         },
+         {
+          "label": "Not Equal",
+          "name": "notEqual"
+         },
+         {
+          "label": "Larger",
+          "name": "larger"
+         },
+         {
+          "label": "Larger Equal",
+          "name": "largerEqual"
+         },
+         {
+          "label": "Is Empty",
+          "name": "isEmpty"
+         },
+         {
+          "label": "Not Empty",
+          "name": "notEmpty"
+         }
+        ],
+        "default": "equal",
+        "description": "Type of operation",
+        "show": {
+         "conditions[$index].type": "number"
+        }
+       },
+       {
+        "label": "Value 2",
+        "name": "value2",
+        "type": "number",
+        "default": 0,
+        "description": "Second value to be compared with",
+        "acceptVariable": true,
+        "show": {
+         "conditions[$index].type": "number"
+        }
+       },
+       {
+        "label": "Value 1",
+        "name": "value1",
+        "type": "boolean",
+        "default": false,
+        "description": "First value to be compared with",
+        "show": {
+         "conditions[$index].type": "boolean"
+        }
+       },
+       {
+        "label": "Operation",
+        "name": "operation",
+        "type": "options",
+        "options": [
+         {
+          "label": "Equal",
+          "name": "equal"
+         },
+         {
+          "label": "Not Equal",
+          "name": "notEqual"
+         }
+        ],
+        "default": "equal",
+        "description": "Type of operation",
+        "show": {
+         "conditions[$index].type": "boolean"
+        }
+       },
+       {
+        "label": "Value 2",
+        "name": "value2",
+        "type": "boolean",
+        "default": false,
+        "description": "Second value to be compared with",
+        "show": {
+         "conditions[$index].type": "boolean"
+        }
+       }
+      ],
+      "id": "conditionAgentflow_0-input-conditions-array",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "conditions": [
+      {
+       "type": "string",
+       "value1": "{{ $flow.state.ready }}",
+       "operation": "equal",
+       "value2": "yes"
+      }
+     ]
+    },
+    "outputAnchors": [
+     {
+      "id": "conditionAgentflow_0-output-0",
+      "label": "0",
+      "name": "0",
+      "description": "0"
+     },
+     {
+      "id": "conditionAgentflow_0-output-1",
+      "label": "1",
+      "name": "1",
+      "description": "1"
+     }
+    ],
+    "outputs": {
+     "conditionAgentflow": ""
+    },
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "directReplyAgentflow_0",
+   "type": "agentFlow",
+   "position": {
+    "x": 1300,
+    "y": -120
+   },
+   "positionAbsolute": {
+    "x": 1300,
+    "y": -120
+   },
+   "data": {
+    "id": "directReplyAgentflow_0",
+    "label": "Reply · READY",
+    "version": 1,
+    "name": "directReplyAgentflow",
+    "type": "DirectReply",
+    "color": "#4DDBBB",
+    "hideOutput": true,
+    "baseClasses": [
+     "DirectReply"
+    ],
+    "category": "Agent Flows",
+    "description": "Directly reply to the user with a message",
+    "inputParams": [
+     {
+      "label": "Message",
+      "name": "directReplyMessage",
+      "type": "string",
+      "rows": 4,
+      "acceptVariable": true,
+      "id": "directReplyAgentflow_0-input-directReplyMessage-string",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "directReplyMessage": "{{ $flow.state.extract }}\n\n{{ $flow.state.detect }}\n\n{{ $flow.state.table }}"
+    },
+    "outputAnchors": [],
+    "outputs": {},
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "customFunctionAgentflow_2",
+   "type": "agentFlow",
+   "position": {
+    "x": 1300,
+    "y": 140
+   },
+   "positionAbsolute": {
+    "x": 1300,
+    "y": 140
+   },
+   "data": {
+    "id": "customFunctionAgentflow_2",
+    "label": "3 · Propose fixes (mock agent)",
+    "version": 1.1,
+    "name": "customFunctionAgentflow",
+    "type": "CustomFunction",
+    "color": "#E4B7FF",
+    "baseClasses": [
+     "CustomFunction"
+    ],
+    "category": "Agent Flows",
+    "description": "Execute custom function",
+    "inputParams": [
+     {
+      "label": "Input Variables",
+      "name": "customFunctionInputVariables",
+      "description": "Input variables can be used in the function with prefix $. For example: $foo",
+      "type": "array",
+      "optional": true,
+      "acceptVariable": true,
+      "array": [
+       {
+        "label": "Variable Name",
+        "name": "variableName",
+        "type": "string"
+       },
+       {
+        "label": "Variable Value",
+        "name": "variableValue",
+        "type": "string",
+        "acceptVariable": true
+       }
+      ],
+      "id": "customFunctionAgentflow_0-input-customFunctionInputVariables-array",
+      "display": true
+     },
+     {
+      "label": "Javascript Function",
+      "name": "customFunctionJavascriptFunction",
+      "type": "code",
+      "codeExample": "/*\n* You can use any libraries imported in Flowise\n* You can use properties specified in Input Variables with the prefix $. For example: $foo\n* You can get default flow config: $flow.sessionId, $flow.chatId, $flow.chatflowId, $flow.input, $flow.state\n* You can get global variables: $vars.<variable-name>\n* Must return a string value at the end of function\n*/\n\nconst fetch = require('node-fetch');\nconst url = 'https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current_weather=true';\nconst options = {\n    method: 'GET',\n    headers: {\n        'Content-Type': 'application/json'\n    }\n};\ntry {\n    const response = await fetch(url, options);\n    const text = await response.text();\n    return text;\n} catch (error) {\n    console.error(error);\n    return '';\n}",
+      "description": "The function to execute. Must return a string or an object that can be converted to a string.",
+      "id": "customFunctionAgentflow_0-input-customFunctionJavascriptFunction-code",
+      "display": true
+     },
+     {
+      "label": "Update Flow State",
+      "name": "customFunctionUpdateState",
+      "description": "Update runtime state during the execution of the workflow",
+      "type": "array",
+      "optional": true,
+      "acceptVariable": true,
+      "array": [
+       {
+        "label": "Key",
+        "name": "key",
+        "type": "asyncOptions",
+        "loadMethod": "listRuntimeStateKeys"
+       },
+       {
+        "label": "Value",
+        "name": "value",
+        "type": "string",
+        "acceptVariable": true,
+        "acceptNodeOutputAsVariable": true
+       }
+      ],
+      "id": "customFunctionAgentflow_0-input-customFunctionUpdateState-array",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "customFunctionInputVariables": [
+      {
+       "variableName": "role",
+       "variableValue": "{{ $form.role }}"
+      },
+      {
+       "variableName": "task",
+       "variableValue": "{{ $form.task }}"
+      }
+     ],
+     "customFunctionJavascriptFunction": "const fetch = require('node-fetch')\nconst BASE = 'http://127.0.0.1:8460'\nconst call = async (path, body) => {\n    try {\n        const res = await fetch(BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json' },\n            body: JSON.stringify(body), timeout: 30000 })\n        const data = await res.json()\n        if (!res.ok) return { ok: false, text: 'Error: ' + ((data.error && data.error.message) || res.status) }\n        return { ok: true, ...data }\n    } catch (e) {\n        return { ok: false, text: 'API unreachable at ' + BASE + ' (' + e.message + '). Run ./start.sh --bg' }\n    }\n}\nconst r = await call('/pipeline/propose', { role: String($role), task: String($task) })\nreturn JSON.stringify({ proposals: r.text })",
+     "customFunctionUpdateState": [
+      {
+       "key": "proposals",
+       "value": "{{ output.proposals }}"
+      }
+     ]
+    },
+    "outputAnchors": [
+     {
+      "id": "customFunctionAgentflow_2-output-customFunctionAgentflow",
+      "label": "Custom Function",
+      "name": "customFunctionAgentflow"
+     }
+    ],
+    "outputs": {},
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "humanInputAgentflow_0",
+   "type": "agentFlow",
+   "position": {
+    "x": 1640,
+    "y": 140
+   },
+   "positionAbsolute": {
+    "x": 1640,
+    "y": 140
+   },
+   "data": {
+    "id": "humanInputAgentflow_0",
+    "label": "Human approval",
+    "version": 1,
+    "name": "humanInputAgentflow",
+    "type": "HumanInput",
+    "color": "#6E6EFD",
+    "baseClasses": [
+     "HumanInput"
+    ],
+    "category": "Agent Flows",
+    "description": "Request human input, approval or rejection during execution",
+    "inputParams": [
+     {
+      "label": "Description Type",
+      "name": "humanInputDescriptionType",
+      "type": "options",
+      "options": [
+       {
+        "label": "Fixed",
+        "name": "fixed",
+        "description": "Specify a fixed description"
+       },
+       {
+        "label": "Dynamic",
+        "name": "dynamic",
+        "description": "Use LLM to generate a description"
+       }
+      ],
+      "id": "humanInputAgentflow_0-input-humanInputDescriptionType-options",
+      "display": true
+     },
+     {
+      "label": "Description",
+      "name": "humanInputDescription",
+      "type": "string",
+      "placeholder": "Are you sure you want to proceed?",
+      "acceptVariable": true,
+      "rows": 4,
+      "show": {
+       "humanInputDescriptionType": "fixed"
+      },
+      "id": "humanInputAgentflow_0-input-humanInputDescription-string",
+      "display": true
+     },
+     {
+      "label": "Model",
+      "name": "humanInputModel",
+      "type": "asyncOptions",
+      "loadMethod": "listModels",
+      "loadConfig": true,
+      "show": {
+       "humanInputDescriptionType": "dynamic"
+      },
+      "id": "humanInputAgentflow_0-input-humanInputModel-asyncOptions",
+      "display": false
+     },
+     {
+      "label": "Prompt",
+      "name": "humanInputModelPrompt",
+      "type": "string",
+      "default": "<p>Summarize the conversation between the user and the assistant, reiterate the last message from the assistant, and ask if user would like to proceed or if they have any feedback. </p>\n<ul>\n<li>Begin by capturing the key points of the conversation, ensuring that you reflect the main ideas and themes discussed.</li>\n<li>Then, clearly reproduce the last message sent by the assistant to maintain continuity. Make sure the whole message is reproduced.</li>\n<li>Finally, ask the user if they would like to proceed, or provide any feedback on the last assistant message</li>\n</ul>\n<h2 id=\"output-format-the-output-should-be-structured-in-three-parts-\">Output Format The output should be structured in three parts in text:</h2>\n<ul>\n<li>A summary of the conversation (1-3 sentences).</li>\n<li>The last assistant message (exactly as it appeared).</li>\n<li>Ask the user if they would like to proceed, or provide any feedback on last assistant message. No other explanation and elaboration is needed.</li>\n</ul>\n",
+      "acceptVariable": true,
+      "generateInstruction": true,
+      "rows": 4,
+      "show": {
+       "humanInputDescriptionType": "dynamic"
+      },
+      "id": "humanInputAgentflow_0-input-humanInputModelPrompt-string",
+      "display": false
+     },
+     {
+      "label": "Enable Feedback",
+      "name": "humanInputEnableFeedback",
+      "type": "boolean",
+      "default": true,
+      "id": "humanInputAgentflow_0-input-humanInputEnableFeedback-boolean",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "humanInputDescriptionType": "fixed",
+     "humanInputDescription": "{{ $flow.state.extract }}\n\n{{ $flow.state.detect }}\n\n{{ $flow.state.table }}\n\n{{ $flow.state.proposals }}\n\n**Approve?** Only the fixes your role may approve are applied; the rest wait for the right approver.",
+     "humanInputModel": "",
+     "humanInputModelPrompt": "",
+     "humanInputEnableFeedback": false
+    },
+    "outputAnchors": [
+     {
+      "id": "humanInputAgentflow_0-output-0",
+      "label": "proceed",
+      "name": "proceed",
+      "description": "proceed"
+     },
+     {
+      "id": "humanInputAgentflow_0-output-1",
+      "label": "reject",
+      "name": "reject",
+      "description": "reject"
+     }
+    ],
+    "outputs": {
+     "humanInputAgentflow": ""
+    },
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "customFunctionAgentflow_3",
+   "type": "agentFlow",
+   "position": {
+    "x": 1940,
+    "y": 60
+   },
+   "positionAbsolute": {
+    "x": 1940,
+    "y": 60
+   },
+   "data": {
+    "id": "customFunctionAgentflow_3",
+    "label": "4 · Fix, re-check, loop",
+    "version": 1.1,
+    "name": "customFunctionAgentflow",
+    "type": "CustomFunction",
+    "color": "#E4B7FF",
+    "baseClasses": [
+     "CustomFunction"
+    ],
+    "category": "Agent Flows",
+    "description": "Execute custom function",
+    "inputParams": [
+     {
+      "label": "Input Variables",
+      "name": "customFunctionInputVariables",
+      "description": "Input variables can be used in the function with prefix $. For example: $foo",
+      "type": "array",
+      "optional": true,
+      "acceptVariable": true,
+      "array": [
+       {
+        "label": "Variable Name",
+        "name": "variableName",
+        "type": "string"
+       },
+       {
+        "label": "Variable Value",
+        "name": "variableValue",
+        "type": "string",
+        "acceptVariable": true
+       }
+      ],
+      "id": "customFunctionAgentflow_0-input-customFunctionInputVariables-array",
+      "display": true
+     },
+     {
+      "label": "Javascript Function",
+      "name": "customFunctionJavascriptFunction",
+      "type": "code",
+      "codeExample": "/*\n* You can use any libraries imported in Flowise\n* You can use properties specified in Input Variables with the prefix $. For example: $foo\n* You can get default flow config: $flow.sessionId, $flow.chatId, $flow.chatflowId, $flow.input, $flow.state\n* You can get global variables: $vars.<variable-name>\n* Must return a string value at the end of function\n*/\n\nconst fetch = require('node-fetch');\nconst url = 'https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current_weather=true';\nconst options = {\n    method: 'GET',\n    headers: {\n        'Content-Type': 'application/json'\n    }\n};\ntry {\n    const response = await fetch(url, options);\n    const text = await response.text();\n    return text;\n} catch (error) {\n    console.error(error);\n    return '';\n}",
+      "description": "The function to execute. Must return a string or an object that can be converted to a string.",
+      "id": "customFunctionAgentflow_0-input-customFunctionJavascriptFunction-code",
+      "display": true
+     },
+     {
+      "label": "Update Flow State",
+      "name": "customFunctionUpdateState",
+      "description": "Update runtime state during the execution of the workflow",
+      "type": "array",
+      "optional": true,
+      "acceptVariable": true,
+      "array": [
+       {
+        "label": "Key",
+        "name": "key",
+        "type": "asyncOptions",
+        "loadMethod": "listRuntimeStateKeys"
+       },
+       {
+        "label": "Value",
+        "name": "value",
+        "type": "string",
+        "acceptVariable": true,
+        "acceptNodeOutputAsVariable": true
+       }
+      ],
+      "id": "customFunctionAgentflow_0-input-customFunctionUpdateState-array",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "customFunctionInputVariables": [
+      {
+       "variableName": "role",
+       "variableValue": "{{ $form.role }}"
+      },
+      {
+       "variableName": "task",
+       "variableValue": "{{ $form.task }}"
+      }
+     ],
+     "customFunctionJavascriptFunction": "const fetch = require('node-fetch')\nconst BASE = 'http://127.0.0.1:8460'\nconst call = async (path, body) => {\n    try {\n        const res = await fetch(BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json' },\n            body: JSON.stringify(body), timeout: 30000 })\n        const data = await res.json()\n        if (!res.ok) return { ok: false, text: 'Error: ' + ((data.error && data.error.message) || res.status) }\n        return { ok: true, ...data }\n    } catch (e) {\n        return { ok: false, text: 'API unreachable at ' + BASE + ' (' + e.message + '). Run ./start.sh --bg' }\n    }\n}\nconst r = await call('/pipeline/apply', { role: String($role), task: String($task) })\nreturn JSON.stringify({ result: r.text })",
+     "customFunctionUpdateState": [
+      {
+       "key": "result",
+       "value": "{{ output.result }}"
+      }
+     ]
+    },
+    "outputAnchors": [
+     {
+      "id": "customFunctionAgentflow_3-output-customFunctionAgentflow",
+      "label": "Custom Function",
+      "name": "customFunctionAgentflow"
+     }
+    ],
+    "outputs": {},
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "directReplyAgentflow_1",
+   "type": "agentFlow",
+   "position": {
+    "x": 2280,
+    "y": 60
+   },
+   "positionAbsolute": {
+    "x": 2280,
+    "y": 60
+   },
+   "data": {
+    "id": "directReplyAgentflow_1",
+    "label": "Reply · round result",
+    "version": 1,
+    "name": "directReplyAgentflow",
+    "type": "DirectReply",
+    "color": "#4DDBBB",
+    "hideOutput": true,
+    "baseClasses": [
+     "DirectReply"
+    ],
+    "category": "Agent Flows",
+    "description": "Directly reply to the user with a message",
+    "inputParams": [
+     {
+      "label": "Message",
+      "name": "directReplyMessage",
+      "type": "string",
+      "rows": 4,
+      "acceptVariable": true,
+      "id": "directReplyAgentflow_0-input-directReplyMessage-string",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "directReplyMessage": "{{ $flow.state.result }}"
+    },
+    "outputAnchors": [],
+    "outputs": {},
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "directReplyAgentflow_2",
+   "type": "agentFlow",
+   "position": {
+    "x": 1940,
+    "y": 300
+   },
+   "positionAbsolute": {
+    "x": 1940,
+    "y": 300
+   },
+   "data": {
+    "id": "directReplyAgentflow_2",
+    "label": "Reply · not applied",
+    "version": 1,
+    "name": "directReplyAgentflow",
+    "type": "DirectReply",
+    "color": "#4DDBBB",
+    "hideOutput": true,
+    "baseClasses": [
+     "DirectReply"
+    ],
+    "category": "Agent Flows",
+    "description": "Directly reply to the user with a message",
+    "inputParams": [
+     {
+      "label": "Message",
+      "name": "directReplyMessage",
+      "type": "string",
+      "rows": 4,
+      "acceptVariable": true,
+      "id": "directReplyAgentflow_0-input-directReplyMessage-string",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "directReplyMessage": "Fixes not applied.\n\n{{ $flow.state.table }}"
+    },
+    "outputAnchors": [],
+    "outputs": {},
+    "selected": false
+   },
+   "width": 220,
+   "height": 72,
+   "selected": false,
+   "dragging": false
+  },
+  {
+   "id": "stickyNoteAgentflow_0",
+   "type": "stickyNote",
+   "position": {
+    "x": 340,
+    "y": 260
+   },
+   "positionAbsolute": {
+    "x": 340,
+    "y": 260
+   },
+   "data": {
+    "id": "stickyNoteAgentflow_0",
+    "label": "Sticky Note",
+    "version": 1,
+    "name": "stickyNoteAgentflow",
+    "type": "StickyNote",
+    "color": "#fee440",
+    "baseClasses": [
+     "StickyNote"
+    ],
+    "category": "Agent Flows",
+    "description": "Add notes to the agent flow",
+    "inputParams": [
+     {
+      "label": "",
+      "name": "note",
+      "type": "string",
+      "rows": 1,
+      "placeholder": "Type something here",
+      "optional": true,
+      "id": "stickyNoteAgentflow_0-input-note-string",
+      "display": true
+     }
+    ],
+    "inputAnchors": [],
+    "inputs": {
+     "note": "DEMO. SAP systems are SIMULATED (synthetic CSVs). The role is a demo selector, not authentication.\n1 Detect -> 2 Propose -> 3 Fix -> loop: each approved fix is recorded upstream, so the next run (round) extracts without that fault.\nAll steps call the taskDataReadiness API at http://127.0.0.1:8460"
+    },
+    "outputAnchors": [
+     {
+      "id": "stickyNoteAgentflow_0-output-stickyNoteAgentflow",
+      "label": "Sticky Note",
+      "name": "stickyNoteAgentflow"
+     }
+    ],
+    "outputs": {},
+    "selected": false
+   },
+   "width": 300,
+   "height": 200,
+   "selected": false,
+   "dragging": false
+  }
+ ],
+ "edges": [
+  {
+   "source": "startAgentflow_0",
+   "sourceHandle": "startAgentflow_0-output-startAgentflow",
+   "target": "customFunctionAgentflow_0",
+   "targetHandle": "customFunctionAgentflow_0",
+   "data": {
+    "sourceColor": "#7EE787",
+    "targetColor": "#E4B7FF",
+    "isHumanInput": false
+   },
+   "type": "agentFlow",
+   "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-customFunctionAgentflow_0-customFunctionAgentflow_0"
+  },
+  {
+   "source": "customFunctionAgentflow_0",
+   "sourceHandle": "customFunctionAgentflow_0-output-customFunctionAgentflow",
+   "target": "customFunctionAgentflow_1",
+   "targetHandle": "customFunctionAgentflow_1",
+   "data": {
+    "sourceColor": "#E4B7FF",
+    "targetColor": "#E4B7FF",
+    "isHumanInput": false
+   },
+   "type": "agentFlow",
+   "id": "customFunctionAgentflow_0-customFunctionAgentflow_0-output-customFunctionAgentflow-customFunctionAgentflow_1-customFunctionAgentflow_1"
+  },
+  {
+   "source": "customFunctionAgentflow_1",
+   "sourceHandle": "customFunctionAgentflow_1-output-customFunctionAgentflow",
+   "target": "conditionAgentflow_0",
+   "targetHandle": "conditionAgentflow_0",
+   "data": {
+    "sourceColor": "#E4B7FF",
+    "targetColor": "#FFB938",
+    "isHumanInput": false
+   },
+   "type": "agentFlow",
+   "id": "customFunctionAgentflow_1-customFunctionAgentflow_1-output-customFunctionAgentflow-conditionAgentflow_0-conditionAgentflow_0"
+  },
+  {
+   "source": "conditionAgentflow_0",
+   "sourceHandle": "conditionAgentflow_0-output-0",
+   "target": "directReplyAgentflow_0",
+   "targetHandle": "directReplyAgentflow_0",
+   "data": {
+    "sourceColor": "#FFB938",
+    "targetColor": "#4DDBBB",
+    "isHumanInput": false,
+    "edgeLabel": "yes"
+   },
+   "type": "agentFlow",
+   "id": "conditionAgentflow_0-conditionAgentflow_0-output-0-directReplyAgentflow_0-directReplyAgentflow_0"
+  },
+  {
+   "source": "conditionAgentflow_0",
+   "sourceHandle": "conditionAgentflow_0-output-1",
+   "target": "customFunctionAgentflow_2",
+   "targetHandle": "customFunctionAgentflow_2",
+   "data": {
+    "sourceColor": "#FFB938",
+    "targetColor": "#E4B7FF",
+    "isHumanInput": false,
+    "edgeLabel": "no"
+   },
+   "type": "agentFlow",
+   "id": "conditionAgentflow_0-conditionAgentflow_0-output-1-customFunctionAgentflow_2-customFunctionAgentflow_2"
+  },
+  {
+   "source": "customFunctionAgentflow_2",
+   "sourceHandle": "customFunctionAgentflow_2-output-customFunctionAgentflow",
+   "target": "humanInputAgentflow_0",
+   "targetHandle": "humanInputAgentflow_0",
+   "data": {
+    "sourceColor": "#E4B7FF",
+    "targetColor": "#6E6EFD",
+    "isHumanInput": false
+   },
+   "type": "agentFlow",
+   "id": "customFunctionAgentflow_2-customFunctionAgentflow_2-output-customFunctionAgentflow-humanInputAgentflow_0-humanInputAgentflow_0"
+  },
+  {
+   "source": "humanInputAgentflow_0",
+   "sourceHandle": "humanInputAgentflow_0-output-0",
+   "target": "customFunctionAgentflow_3",
+   "targetHandle": "customFunctionAgentflow_3",
+   "data": {
+    "sourceColor": "#6E6EFD",
+    "targetColor": "#E4B7FF",
+    "isHumanInput": true,
+    "edgeLabel": "proceed"
+   },
+   "type": "agentFlow",
+   "id": "humanInputAgentflow_0-humanInputAgentflow_0-output-0-customFunctionAgentflow_3-customFunctionAgentflow_3"
+  },
+  {
+   "source": "humanInputAgentflow_0",
+   "sourceHandle": "humanInputAgentflow_0-output-1",
+   "target": "directReplyAgentflow_2",
+   "targetHandle": "directReplyAgentflow_2",
+   "data": {
+    "sourceColor": "#6E6EFD",
+    "targetColor": "#4DDBBB",
+    "isHumanInput": true,
+    "edgeLabel": "reject"
+   },
+   "type": "agentFlow",
+   "id": "humanInputAgentflow_0-humanInputAgentflow_0-output-1-directReplyAgentflow_2-directReplyAgentflow_2"
+  },
+  {
+   "source": "customFunctionAgentflow_3",
+   "sourceHandle": "customFunctionAgentflow_3-output-customFunctionAgentflow",
+   "target": "directReplyAgentflow_1",
+   "targetHandle": "directReplyAgentflow_1",
+   "data": {
+    "sourceColor": "#E4B7FF",
+    "targetColor": "#4DDBBB",
+    "isHumanInput": false
+   },
+   "type": "agentFlow",
+   "id": "customFunctionAgentflow_3-customFunctionAgentflow_3-output-customFunctionAgentflow-directReplyAgentflow_1-directReplyAgentflow_1"
+  }
+ ]
+}

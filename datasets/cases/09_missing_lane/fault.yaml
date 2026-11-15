@@ -1,0 +1,6 @@
+title: Lead time WH-A > WH-C missing
+injected_fault: The lane table has no WH-A > WH-C row.
+expected_detection:
+- transfer_lead_times:coverage
+expected_fix:
+- reextract_rows

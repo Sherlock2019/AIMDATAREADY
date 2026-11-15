@@ -1,0 +1,241 @@
+# ODCS v3.1.0 data contract + catalog record for `ariba_pos` - SINGLE SOURCE OF TRUTH (edit this file).
+# Validated against the official ODCS JSON Schema at load time. SIMULATED SAP landscape, fictional owners.
+apiVersion: v3.1.0
+kind: DataContract
+id: open_purchase_orders
+version: '1.0'
+status: approved
+name: Open purchase orders
+domain: procurement
+description:
+  purpose: Purchase orders and expected delivery dates.
+schema:
+- name: ariba_pos
+  physicalName: ariba_pos.csv
+  physicalType: file
+  logicalType: object
+  properties:
+  - name: po_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 1
+  - name: supplier_id
+    logicalType: string
+    physicalType: string
+  - name: material_id
+    logicalType: string
+    physicalType: string
+  - name: quantity
+    logicalType: integer
+    physicalType: integer
+    required: true
+    quality:
+    - name: non_negative
+      type: sql
+      dimension: conformity
+      mustBe: 0
+      query: SELECT COUNT(*) FROM ariba_pos WHERE quantity < 0
+  - name: price_eur
+    logicalType: number
+    physicalType: decimal
+    required: true
+    quality:
+    - name: non_negative
+      type: sql
+      dimension: conformity
+      mustBe: 0
+      query: SELECT COUNT(*) FROM ariba_pos WHERE price_eur < 0
+  - name: due_date
+    logicalType: date
+    physicalType: date
+    required: true
+    description: Supplier-confirmed or expected delivery date
+    quality:
+    - name: iso_dates
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        pattern: ^\d{4}-\d{2}-\d{2}$
+      mustBe: 0
+  - name: status
+    logicalType: string
+    physicalType: string
+    quality:
+    - name: allowed_values
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        validValues:
+        - ordered
+        - confirmed
+        - delivered
+      mustBe: 0
+  description: Purchase orders placed with suppliers and their expected delivery dates.
+  dataGranularityDescription: one purchase order line
+  customProperties:
+  - property: requiredFields
+    value:
+    - po_id
+    - supplier_id
+    - material_id
+    - quantity
+    - price_eur
+    - due_date
+    - status
+  - property: uniqueKeyDeclared
+    value: true
+slaProperties:
+- property: latency
+  value: 72
+  unit: h
+  element: source_event_time
+  description: Maximum age of the source data (source event time) for any consumer.
+- property: retention
+  value: Keep 13 months; staging copies are deleted at the next extraction; derived outputs follow the source.
+team:
+  members:
+  - username: Procurement team (fictional)
+    role: owner
+  - username: SAP Ariba team (fictional)
+    role: technical owner
+  - username: Supply Chain Data team (fictional)
+    role: data steward
+support:
+- channel: '#sc-data-support (fictional channel)'
+  tool: slack
+  scope: issues
+roles:
+- role: procurement managers
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: planners
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: supply-chain director
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: agent:planning-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:procurement-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:supervisor-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+customProperties:
+- property: catalogLifecycleStatus
+  value: active
+- property: catalogOwnerReviewedOn
+  value: '2026-10-01'
+- property: catalogGeographicCoverage
+  value: France, Spain, Italy (warehouses WH-A Paris, WH-B Madrid, WH-C Milan)
+- property: catalogSourceSystem
+  value: SAP Ariba
+- property: catalogSourceLocation
+  value: Ariba Purchase Orders API
+- property: catalogSourceRecordId
+  value: po_id
+- property: catalogTransformationHistory
+  value:
+  - supplier IDs mapped to the SAP vendor master
+- property: catalogLineage
+  value:
+  - SAP Ariba
+  - connector v0.9
+  - staging
+  - readiness gate
+  - procurement agent
+- property: catalogChangeHistory
+  value:
+  - 2026-09-01 status delivered added
+- property: catalogUnits
+  value: EA
+- property: catalogRestrictedColumns
+  value:
+    price_eur: supplier purchase price (column-level ACL)
+- property: catalogKnownLimitations
+  value:
+  - partial deliveries are not split
+- property: catalogApprovedUseCases
+  value:
+  - replenishment
+  - supplier risk
+  - stock transfers
+- property: catalogClassification
+  value: confidential
+- property: catalogPermittedPurposes
+  value:
+  - supply_chain_planning
+- property: contractConsumer
+  value: SCInsight planning agents (via the readiness gate)
+- property: contractPurpose
+  value:
+  - supply_chain_planning
+- property: contractSecurity
+  value:
+    external_model_processing: requires_approval
+- property: contractOperationalExpectations
+  value: Late or unavailable source -> alert the owner and block automated recommendations.
+- property: contractChangeManagement
+  value: The data owner approves breaking schema changes; consumers are notified 2 weeks ahead.
+- property: contractEvidence
+  value:
+    require_recent_validation: true
+    store_validation_run_id: true
+    store_source_snapshot_id: true
+- property: contractSourceRules
+  value:
+    snapshot_id_required: true
+    source_event_timestamp_required: true
+    ingestion_timestamp_required: true
+- property: contractProducer
+  value: SAP Ariba team
+- property: contractOwnership
+  value:
+    business_owner: Procurement
+    technical_owner: SAP Ariba team
+    steward: Supply Chain Data team
+- property: contractBusinessDefinitions
+  value:
+    due_date: Expected delivery date; may be empty until the supplier confirms.
+- property: contractCoverage
+  value:
+  - all open purchase orders of the company code
+- property: contractLineage
+  value: SAP Ariba -> connector v0.9 -> daily export id
+- property: contractHumanApproval
+  value:
+    domain: procurement
+- property: contractFreshnessExtra
+  value: {}
+- property: catalogKeysPresent
+  value:
+  - business_definitions
+  - business_domain
+  - business_owner
+  - contact
+  - data_steward
+  - description
+  - granularity
+  - name
+  - permitted_agents
+  - permitted_users
+  - retention
+  - schema_types
+  - technical_owner

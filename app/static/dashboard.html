@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Readiness Lab</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #1c2330; --muted: #5d6778; --line: #e2e6ec; --accent: #2f5bd3;
+  --pass: #1f7a4d; --pass-bg: #e3f4ea; --warn: #8a5a00; --warn-bg: #fdf1d8; --fail: #b42318; --fail-bg: #fde7e5;
+  --err: #7a2e8f; --err-bg: #f3e6f7; --skip: #6b7280; --skip-bg: #eef0f3; --claude: #b4542f; --claude-bg: #fbeee8;
+  --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #11151c; --panel: #181e27; --ink: #e6e9ef; --muted: #9aa4b5; --line: #2a3240; --accent: #7aa2ff;
+    --pass: #5fd39a; --pass-bg: #163326; --warn: #f4c15d; --warn-bg: #3a2e12; --fail: #ff8a80; --fail-bg: #3d1c1a;
+    --err: #d9a3ea; --err-bg: #33203b; --skip: #9aa4b5; --skip-bg: #232a35; --claude: #f0a07c; --claude-bg: #3a241b;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { background: var(--panel); border-bottom: 1px solid var(--line); padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+header h1 { font-size: 18px; margin: 0; }
+.sub { color: var(--muted); font-size: 13px; }
+.grow { flex: 1; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: 12px; color: var(--muted); background: var(--bg); }
+.chip.claude-on { color: var(--claude); border-color: var(--claude); background: var(--claude-bg); }
+select, button { font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 6px 10px; }
+button { cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.claude { border-color: var(--claude); color: var(--claude); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+main { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; padding: 16px 20px; max-width: 1800px; margin: 0 auto; }
+main > * { min-width: 0; }
+@media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); padding: 12px 16px; } header { padding: 12px 16px; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+.cases { padding: 8px; display: flex; flex-direction: column; gap: 4px; align-self: start; }
+.case { text-align: left; border: 1px solid transparent; background: transparent; padding: 8px 10px; display: grid; grid-template-columns: 28px 1fr; gap: 2px 8px; }
+.case:hover { background: var(--bg); }
+.case.active { border-color: var(--accent); background: var(--bg); }
+.case .num { color: var(--muted); font-variant-numeric: tabular-nums; grid-row: span 2; padding-top: 1px; }
+.case .t { font-weight: 600; font-size: 13px; }
+.case .d { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.pill { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+.READY { color: var(--pass); background: var(--pass-bg); }
+.READY_WITH_WARNINGS { color: var(--warn); background: var(--warn-bg); }
+.BLOCKED { color: var(--fail); background: var(--fail-bg); }
+.none { color: var(--skip); background: var(--skip-bg); }
+section.card { padding: 16px 18px; margin-bottom: 16px; }
+section.card h2 { font-size: 15px; margin: 0 0 4px; }
+section.card h3 { font-size: 13px; margin: 14px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.fault { border-left: 3px solid var(--warn); padding: 6px 10px; background: var(--warn-bg); border-radius: 0 8px 8px 0; margin-top: 8px; font-size: 13px; }
+.fault b { color: var(--warn); }
+.cmp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.cmp > * { min-width: 0; }
+@media (max-width: 1600px) { .cmp { grid-template-columns: minmax(0, 1fr); } }
+.cmp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 6px; text-align: left; vertical-align: middle; }
+th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.req { font-weight: 600; white-space: nowrap; }
+.cell { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; padding: 2px 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: 1px solid transparent; }
+.cell:focus, .cell.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+.PASS { color: var(--pass); background: var(--pass-bg); }
+.WARN { color: var(--warn); background: var(--warn-bg); }
+.FAIL { color: var(--fail); background: var(--fail-bg); }
+.ERROR { color: var(--err); background: var(--err-bg); }
+.SKIPPED { color: var(--skip); background: var(--skip-bg); }
+.na { color: var(--muted); }
+.reasons { margin-top: 8px; font-size: 12px; background: var(--bg); border-radius: 8px; padding: 8px 10px; min-height: 34px; color: var(--muted); }
+.reasons div { margin: 2px 0; color: var(--ink); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; align-items: center; }
+.fix { display: grid; grid-template-columns: 22px 1fr; gap: 6px 10px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; }
+.fix.human { border-style: dashed; }
+.fix .act { font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.fix .meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+.tag { font-size: 11px; border-radius: 6px; padding: 1px 6px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); }
+.tag.claude { color: var(--claude); border-color: var(--claude); background: var(--claude-bg); }
+.tag.rules { color: var(--accent); border-color: var(--accent); }
+.rat { font-size: 13px; margin-top: 4px; }
+.summary { white-space: pre-wrap; font-size: 13px; border-left: 3px solid var(--claude); background: var(--claude-bg); padding: 8px 12px; border-radius: 0 8px 8px 0; }
+.log li { margin: 4px 0; font-size: 13px; }
+.muted { color: var(--muted); }
+.note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.hidden { display: none; }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: s .8s linear infinite; vertical-align: -2px; }
+@keyframes s { to { transform: rotate(360deg); } }
+footer { max-width: 1400px; margin: 0 auto; padding: 0 20px 24px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Data Readiness Lab</h1>
+    <div class="sub" id="taskline">loading…</div>
+  </div>
+  <div class="grow"></div>
+  <a class="chip claude-on" href="/table" style="text-decoration:none;font-weight:700">Data readiness table →</a>
+  <span class="chip" title="Synthetic data, demo permissions, demo identity selector">DEMO · synthetic · not authentication</span>
+  <span class="chip" id="claudechip">Claude: …</span>
+  <label class="sub">Demo identity
+    <select id="identity">
+      <option value="planner_all">planner_all (WH-A, B, C)</option>
+      <option value="planner_ab">planner_ab (WH-A, B only)</option>
+      <option value="contractor">contractor (no rights)</option>
+    </select>
+  </label>
+  <button class="primary" id="runall">Auto-correct all cases</button>
+</header>
+
+<main>
+  <nav class="panel cases" id="cases" aria-label="Dataset cases"></nav>
+  <div>
+    <section class="card panel hidden" id="allcard">
+      <h2>All cases: detect → correct → re-check</h2>
+      <div class="sub">Each case is reset, the rules planner proposes fixes, fixes are applied to a working copy, and the engine re-checks.</div>
+      <div class="tablewrap" style="margin-top:10px"><table id="alltable"></table></div>
+    </section>
+
+    <section class="card panel" id="casecard">
+      <h2 id="ctitle">Select a case</h2>
+      <div class="fault hidden" id="cfault"></div>
+      <div class="cmp" style="margin-top:14px">
+        <div>
+          <div class="cmp-head"><h3 style="margin:0">Original dataset</h3><span id="odec"></span></div>
+          <div class="tablewrap" id="omatrix"></div>
+        </div>
+        <div>
+          <div class="cmp-head"><h3 style="margin:0">Working copy (fixes applied here)</h3><span id="wdec"></span></div>
+          <div class="tablewrap" id="wmatrix"></div>
+        </div>
+      </div>
+      <div class="reasons" id="reasons">Click a cell to see why it passed or failed.</div>
+    </section>
+
+    <section class="card panel" id="fixcard">
+      <h2>Proposed fixes</h2>
+      <div class="sub">Proposals are suggestions. The server validates each against the allow-list, you choose what to apply, and only the readiness engine decides READY.</div>
+      <div class="toolbar">
+        <button id="prules">Propose fixes (rules)</button>
+        <button class="claude" id="pclaude">Ask Claude</button>
+        <span class="grow"></span>
+        <button class="primary" id="apply" disabled>Apply selected</button>
+        <button id="reset">Reset working copy</button>
+      </div>
+      <div id="claudesum"></div>
+      <div id="fixes" class="muted">No proposals yet.</div>
+      <div id="changes"></div>
+    </section>
+  </div>
+</main>
+<footer>
+  Fixes never invent values: they come from the source of record, the steward registry, or a lossless transform
+  (exact duplicates, code normalisation, a declared date format). Rows that cannot be repaired are quarantined.
+  Asking Claude sends the failing checks and a few synthetic sample rows to the Anthropic API.
+</footer>
+
+<script>
+const CHECKS = ["context", "catalog", "access", "freshness", "schema", "coverage", "quality", "provenance"];
+const ICON = { PASS: "✓", WARN: "!", FAIL: "✕", ERROR: "?", SKIPPED: "–" };
+const S = { cases: [], current: null, proposals: [], claude: null, results: {} };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pill = (d) => d ? `<span class="pill ${esc(d)}">${esc(d.replaceAll("_", " "))}</span>` : `<span class="pill none">not run</span>`;
+const identity = () => ({ user: $("identity").value, agent: "scinsight_supervisor" });
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!res.ok) throw new Error((data.error && data.error.message) || res.statusText);
+  return data;
+}
+
+function matrix(summary, side) {
+  const reqs = Object.keys(summary.matrix);
+  let h = `<table><thead><tr><th>requirement</th>${CHECKS.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>`;
+  for (const r of reqs) {
+    h += `<tr><td class="req">${esc(r)}</td>`;
+    for (const c of CHECKS) {
+      const cell = summary.matrix[r][c] || (c !== "context" && summary.matrix[r]["other_checks"] && c !== "catalog" && c !== "access" ? summary.matrix[r]["other_checks"] : null);
+      if (!cell) { h += `<td class="na">·</td>`; continue; }
+      h += `<td><span tabindex="0" role="button" class="cell ${cell.status}" data-side="${side}" data-r="${esc(r)}" data-c="${c}" aria-label="${esc(r)} ${c} ${cell.status}">${ICON[cell.status] || ""} ${cell.status}</span></td>`;
+    }
+    h += "</tr>";
+  }
+  return h + "</tbody></table>";
+}
+
+function showReasons(el) {
+  document.querySelectorAll(".cell.sel").forEach((x) => x.classList.remove("sel"));
+  el.classList.add("sel");
+  const sum = S.results[el.dataset.side];
+  const m = sum.matrix[el.dataset.r];
+  const cell = m[el.dataset.c] || m["other_checks"];
+  $("reasons").innerHTML = `<b>${esc(el.dataset.r)} · ${esc(el.dataset.c)}</b> (${el.dataset.side})` + cell.reasons.map((x) => `<div>${esc(x)}</div>`).join("");
+}
+document.addEventListener("click", (e) => { const c = e.target.closest(".cell"); if (c) showReasons(c); });
+document.addEventListener("keydown", (e) => { const c = e.target.closest && e.target.closest(".cell"); if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); showReasons(c); } });
+
+function renderCases() {
+  $("cases").innerHTML = S.cases.map((c) => {
+    const n = c.case_id.slice(0, 2);
+    return `<button class="case ${S.current === c.case_id ? "active" : ""}" data-id="${esc(c.case_id)}">
+      <span class="num">${esc(n)}</span><span class="t">${esc(c.title)}</span>
+      <span class="d">${pill(c._orig)} → ${pill(c._work)}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".case").forEach((b) => b.onclick = () => selectCase(b.dataset.id));
+}
+
+function caseById(id) { return S.cases.find((c) => c.case_id === id); }
+
+async function refreshCase(id) {
+  const [o, w] = await Promise.all([
+    api(`/demo/datasets/${id}/check`, { demo_identity: identity(), target: "original" }),
+    api(`/demo/datasets/${id}/check`, { demo_identity: identity(), target: "working" }),
+  ]);
+  const c = caseById(id); c._orig = o.summary.decision; c._work = w.summary.decision;
+  if (S.current === id) {
+    S.results.original = o.summary; S.results.working = w.summary;
+    $("omatrix").innerHTML = matrix(o.summary, "original"); $("odec").innerHTML = pill(o.summary.decision);
+    $("wmatrix").innerHTML = matrix(w.summary, "working"); $("wdec").innerHTML = pill(w.summary.decision);
+  }
+  renderCases();
+}
+
+async function selectCase(id) {
+  S.current = id; S.proposals = []; $("allcard").classList.add("hidden");
+  const c = caseById(id);
+  $("ctitle").textContent = `${id.slice(0, 2)} · ${c.title}`;
+  const f = $("cfault");
+  if (c.injected_fault && c.injected_fault !== "none") { f.classList.remove("hidden"); f.innerHTML = `<b>Injected fault</b> (hidden from the engine; it must find it in the data): ${esc(c.injected_fault)}`; }
+  else { f.classList.remove("hidden"); f.innerHTML = `<b>Control case</b>: no fault injected. Expected READY with no fixes.`; }
+  $("reasons").textContent = "Click a cell to see why it passed or failed.";
+  $("fixes").innerHTML = '<span class="muted">No proposals yet.</span>'; $("changes").innerHTML = ""; $("claudesum").innerHTML = "";
+  $("apply").disabled = true;
+  renderCases();
+  await refreshCase(id);
+}
+
+function renderFixes() {
+  if (!S.proposals.length) { $("fixes").innerHTML = '<span class="muted">Nothing to fix: no failing checks, or no allowed action applies.</span>'; $("apply").disabled = true; return; }
+  $("fixes").innerHTML = S.proposals.map((p, i) => {
+    const human = p.action === "escalate";
+    const target = [p.column, (p.values || []).join(", ")].filter(Boolean).join(" · ");
+    return `<label class="fix ${human ? "human" : ""}">
+      <input type="checkbox" data-i="${i}" ${human ? "disabled" : "checked"} aria-label="apply ${esc(p.action)}">
+      <div><div class="act">${esc(p.action)} <span class="muted">→ ${esc(p.requirement)}${target ? " · " + esc(target) : ""}</span></div>
+      <div class="rat">${esc(p.rationale)}</div>
+      <div class="meta"><span class="tag ${esc(p.proposed_by)}">proposed by ${esc(p.proposed_by)}</span>
+      <span class="tag">data from: ${esc(p.source)}</span>${p.check ? `<span class="tag">check: ${esc(p.check)}</span>` : ""}
+      ${human ? '<span class="tag">needs a person · not applied</span>' : ""}</div></div></label>`;
+  }).join("");
+  $("apply").disabled = !S.proposals.some((p) => p.action !== "escalate");
+}
+
+async function propose(proposer) {
+  if (!S.current) return;
+  const btn = proposer === "claude" ? $("pclaude") : $("prules");
+  const label = btn.textContent; btn.disabled = true; btn.innerHTML = `<span class="spin"></span> ${proposer === "claude" ? "Claude is diagnosing…" : "Planning…"}`;
+  $("claudesum").innerHTML = "";
+  try {
+    const r = await api(`/demo/datasets/${S.current}/propose`, { demo_identity: identity(), proposer });
+    S.proposals = r.proposals || [];
+    if (r.claude) {
+      const c = r.claude;
+      let h = "";
+      if (c.message) h += `<div class="note">${esc(c.message)}</div>`;
+      if (c.summary) h += `<div class="summary">${esc(c.summary)}</div>`;
+      if (c.rejected && c.rejected.length) h += `<div class="note">${c.rejected.length} Claude proposal(s) rejected by the allow-list: ${c.rejected.map((x) => esc(x.action + " (" + x.error + ")")).join("; ")}</div>`;
+      $("claudesum").innerHTML = h;
+    }
+    renderFixes();
+  } catch (e) { $("fixes").innerHTML = `<span class="muted">Error: ${esc(e.message)}</span>`; }
+  btn.disabled = proposer === "claude" ? !(S.claude && S.claude.configured) : false; btn.textContent = label;
+}
+
+async function applyFixes() {
+  const chosen = [...document.querySelectorAll("#fixes input[type=checkbox]:checked")].map((x) => S.proposals[+x.dataset.i]);
+  $("apply").disabled = true;
+  try {
+    const r = await api(`/demo/datasets/${S.current}/apply`, { demo_identity: identity(), proposals: chosen });
+    $("changes").innerHTML = `<h3>Applied to the working copy</h3><div>${pill(r.before.decision)} → ${pill(r.after.decision)} <span class="muted">(engine re-check ${esc(r.after.evaluation_id)})</span></div>
+      <ul class="log">${r.changes.map((c) => `<li><b>${esc(c.action)}</b> <span class="tag">${esc(c.status || "")}</span> ${esc(c.detail)} <span class="muted">· data from ${esc(c.source)}</span></li>`).join("")}</ul>
+      ${r.rejected.length ? `<div class="note">${r.rejected.length} proposal(s) rejected: ${r.rejected.map((x) => esc(x.error)).join("; ")}</div>` : ""}
+      ${r.after.decision === "BLOCKED" ? '<div class="note">Still BLOCKED: propose again to see what is left, or check the "needs a person" items.</div>' : ""}`;
+    S.proposals = []; $("fixes").innerHTML = '<span class="muted">Applied. Propose again to check for anything left.</span>';
+    await refreshCase(S.current);
+  } catch (e) { $("changes").innerHTML = `<div class="note">Error: ${esc(e.message)}</div>`; }
+}
+
+async function resetCase() {
+  if (!S.current) return;
+  await api(`/demo/datasets/${S.current}/reset`, {});
+  S.proposals = []; $("fixes").innerHTML = '<span class="muted">Working copy reset to the original faulty dataset.</span>'; $("changes").innerHTML = ""; $("claudesum").innerHTML = "";
+  await refreshCase(S.current);
+}
+
+async function runAll() {
+  const btn = $("runall"); btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Running…';
+  try {
+    const r = await api("/demo/datasets/run-all", { demo_identity: identity() });
+    $("allcard").classList.remove("hidden");
+    $("alltable").innerHTML = `<thead><tr><th>case</th><th>before</th><th>detected</th><th>fixes applied</th><th>after</th><th>needs a person</th></tr></thead><tbody>` +
+      r.results.map((x) => `<tr><td><b>${esc(x.case_id.slice(0, 2))}</b> ${esc(x.title)}</td><td>${pill(x.before)}</td><td>${esc(x.detected.join(", ") || "-")}</td><td>${esc(x.fixes.join(", ") || "-")}</td><td>${pill(x.after)}</td><td>${x.needs_human || "-"}</td></tr>`).join("") + "</tbody>";
+    for (const x of r.results) { const c = caseById(x.case_id); c._orig = x.before; c._work = x.after; }
+    renderCases();
+    if (S.current) await refreshCase(S.current);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (e) { alert(e.message); }
+  btn.disabled = false; btn.textContent = "Auto-correct all cases";
+}
+
+async function init() {
+  const d = await api("/demo/datasets");
+  S.cases = d.cases; S.claude = d.claude;
+  const ctx = d.context;
+  $("taskline").textContent = `Task ${d.task_id} (profile ${d.profile_version}) · ${ctx.product_id} ${ctx.origin_warehouse} → ${ctx.destination_warehouse} · ${ctx.planning_period}`;
+  const chip = $("claudechip");
+  if (d.claude.configured) { chip.textContent = `Claude agent: ${d.claude.model}`; chip.classList.add("claude-on"); }
+  else { chip.textContent = "Claude: not configured"; chip.title = d.claude.how_to_enable; $("pclaude").disabled = true; $("pclaude").title = d.claude.how_to_enable; }
+  renderCases();
+  await Promise.all(S.cases.map((c) => api(`/demo/datasets/${c.case_id}/check`, { demo_identity: identity(), target: "original" }).then((r) => { c._orig = r.summary.decision; c._work = c.has_working_copy ? undefined : null; })));
+  renderCases();
+  selectCase(S.cases[1] ? S.cases[1].case_id : S.cases[0].case_id);
+}
+$("prules").onclick = () => propose("rules");
+$("pclaude").onclick = () => propose("claude");
+$("apply").onclick = applyFixes;
+$("reset").onclick = resetCase;
+$("runall").onclick = runAll;
+$("identity").onchange = () => { if (S.current) selectCase(S.current); };
+init().catch((e) => { $("taskline").textContent = "Error: " + e.message; });
+</script>
+</body>
+</html>

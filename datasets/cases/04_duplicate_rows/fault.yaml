@@ -1,0 +1,7 @@
+title: Duplicate batch rows
+injected_fault: Batch A-001-1 appears twice; batch C-001-1 appears twice with different
+  quantities.
+expected_detection:
+- inventory:quality
+expected_fix:
+- deduplicate

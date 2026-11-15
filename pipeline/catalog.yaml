@@ -1,0 +1,263 @@
+# LEGACY INPUT - the single source of truth is now pipeline/odcs/<asset>.odcs.yaml (ODCS v3.1.0, read by the
+# service). This file only feeds the one-time migration: .venv/bin/python scripts/export_odcs.py
+#
+# DATA CATALOG (airport directory): one record per data asset of the SIMULATED SAP landscape.
+# Static fields live here. Dynamic fields are computed at check time, never typed in:
+#   version / snapshot id, source event time, ingestion time, last successful update  <- extraction manifest
+#   warehouse / product / time coverage                                               <- the actual rows
+#   completeness, validity, duplicates, freshness, quality check history              <- readiness runs
+# The readiness gate's `metadata` check verifies every field listed in pipeline.yaml -> catalog_required_fields.
+# Ownership values are fictional teams; a real catalog should reference a maintained user/team directory.
+defaults: &defaults
+  lifecycle_status: active
+  owner_reviewed_on: "2026-10-01"
+  contact: "#sc-data-support (fictional channel)"
+  data_steward: Supply Chain Data team (fictional)
+  geographic_coverage: France, Spain, Italy (warehouses WH-A Paris, WH-B Madrid, WH-C Milan)
+  permitted_agents: [agent:planning-agent, agent:procurement-agent, agent:supervisor-agent]
+  retention: Keep 13 months; staging copies are deleted at the next extraction; derived outputs follow the source.
+
+assets:
+  s4_mm_stock:
+    <<: *defaults
+    name: Inventory snapshot (stock by batch)
+    description: Stock on hand by product, warehouse and batch, with release status and expiry date.
+    business_domain: inventory
+    business_owner: Inventory Operations team (fictional)
+    technical_owner: SAP Integration team (fictional)
+    source_system: SAP S/4HANA MM
+    source_location: API_MATERIAL_STOCK_SRV (approved inventory API)
+    source_record_id: batch_id + warehouse_id
+    transformation_history: [standardised warehouse IDs (plant/storage location -> WH-x), quantities in base unit EA]
+    lineage: [SAP S/4HANA MM, connector v1.4, staging, readiness gate, planning agents]
+    change_history: ["2026-09-12 contract v1.2: expiry_date became required"]
+    business_definitions: {quantity: "Stock in the batch, base unit. Usable stock = released, not expired, not reserved.",
+                           status: "released | blocked | reserved | quality_inspection"}
+    schema_types: {product_id: string, warehouse_id: string, batch_id: string, quantity: integer, uom: string,
+                   status: string, expiry_date: date}
+    units: EA (each)
+    granularity: one batch per warehouse per snapshot
+    known_limitations: [one snapshot per day; intraday movements are not visible]
+    approved_use_cases: [inventory planning, stock transfers, replenishment, executive reporting]
+    classification: internal
+    permitted_users: [planners, warehouse managers, supply-chain director]
+    permitted_purposes: [supply_chain_planning]
+
+  ewm_bin_stock:
+    <<: *defaults
+    name: Warehouse bin stock
+    description: Physical stock per bin and batch in the warehouses.
+    business_domain: warehouse
+    business_owner: Warehouse Operations team (fictional)
+    technical_owner: SAP EWM team (fictional)
+    source_system: SAP EWM
+    source_location: API_WHSE_PHYSSTOCKPROD
+    source_record_id: warehouse_id + bin_id + batch_id
+    transformation_history: [bin codes kept as in EWM]
+    lineage: [SAP EWM, connector v1.1, staging, readiness gate, warehouse agent]
+    change_history: ["2026-08-30 bin_status added"]
+    business_definitions: {bin_status: "available | blocked (blocked bins cannot be picked)"}
+    schema_types: {warehouse_id: string, bin_id: string, product_id: string, batch_id: string, quantity: integer,
+                   bin_status: string}
+    units: EA (each)
+    granularity: one batch per bin per snapshot
+    known_limitations: [handling units are not expanded]
+    approved_use_cases: [warehouse balancing, executive reporting]
+    classification: internal
+    permitted_users: [warehouse managers, logistics managers, supply-chain director]
+    permitted_purposes: [supply_chain_planning]
+
+  tm_lanes:
+    <<: *defaults
+    name: Transfer lead times and costs
+    description: Planned road lead time and cost per unit between warehouses.
+    business_domain: logistics
+    business_owner: Logistics team (fictional)
+    technical_owner: SAP TM team (fictional)
+    source_system: SAP TM
+    source_location: TM transportation lanes
+    source_record_id: origin_warehouse + destination_warehouse
+    transformation_history: [cost converted to EUR per unit]
+    lineage: [SAP TM, connector v1.0, staging, readiness gate, logistics and warehouse agents]
+    change_history: ["2026-11-01 monthly lane refresh"]
+    business_definitions: {lead_time_days: "Planned door-to-door days, not measured transit time"}
+    schema_types: {origin_warehouse: string, destination_warehouse: string, mode: string, lead_time_days: integer,
+                   cost_per_unit_eur: decimal}
+    units: days; EUR per unit
+    granularity: one lane (origin, destination, mode)
+    known_limitations: [planned values only; no carrier-specific rates]
+    approved_use_cases: [stock transfers, replenishment]
+    classification: internal
+    permitted_users: [logistics managers, warehouse managers, planners]
+    permitted_purposes: [supply_chain_planning]
+
+  ibp_demand_forecast:
+    <<: *defaults
+    name: Weekly demand forecast
+    description: Forecast units per product, warehouse and week.
+    business_domain: demand planning
+    business_owner: Demand Planning team (fictional)
+    technical_owner: SAP IBP team (fictional)
+    source_system: SAP IBP
+    source_location: IBP planning area export
+    source_record_id: product_id + warehouse_id + week_start
+    transformation_history: [weeks aligned to Monday start]
+    lineage: [SAP IBP, export job v2.3, staging, readiness gate, planning agents]
+    change_history: ["2026-11-13 model ibp-baseline-2.3"]
+    business_definitions: {forecast_units: "Unconstrained demand forecast, units"}
+    schema_types: {product_id: string, warehouse_id: string, week_start: date, forecast_units: integer,
+                   model_version: string}
+    units: EA per week
+    granularity: one product per warehouse per week
+    known_limitations: [promotions not modelled]
+    approved_use_cases: [demand forecasting, stock transfers, replenishment]
+    classification: internal
+    permitted_users: [demand planners, planners, supply-chain director]
+    permitted_purposes: [supply_chain_planning]
+
+  s4_pp_orders:
+    <<: *defaults
+    name: Production orders
+    description: Planned and released production orders of the factory.
+    business_domain: factory
+    business_owner: Production Planning team (fictional)
+    technical_owner: SAP Integration team (fictional)
+    source_system: SAP S/4HANA PP
+    source_location: API_PRODUCTION_ORDER_2_SRV
+    source_record_id: order_id
+    transformation_history: [none]
+    lineage: [SAP S/4HANA PP, connector v1.4, staging, readiness gate, factory agent]
+    change_history: ["2026-07-15 status confirmed added"]
+    business_definitions: {status: "planned | released | confirmed"}
+    schema_types: {order_id: string, product_id: string, plant: string, quantity: integer, due_date: date,
+                   status: string}
+    units: EA
+    granularity: one production order
+    known_limitations: [costs are not extracted]
+    approved_use_cases: [production planning, executive reporting]
+    classification: internal
+    permitted_users: [production planners, supply-chain director]
+    permitted_purposes: [supply_chain_planning]
+
+  s4_sd_orders:
+    <<: *defaults
+    name: Sales orders
+    description: Open customer sales orders by product and shipping warehouse.
+    business_domain: sales
+    business_owner: Sales Operations team (fictional)
+    technical_owner: SAP Integration team (fictional)
+    source_system: SAP S/4HANA SD
+    source_location: API_SALES_ORDER_SRV
+    source_record_id: order_id
+    transformation_history: [requested dates normalised to YYYY-MM-DD]
+    lineage: [SAP S/4HANA SD, connector v1.4, staging, readiness gate, planning agents]
+    change_history: ["2026-10-02 requested_date became required"]
+    business_definitions: {quantity: "Ordered units not yet delivered"}
+    schema_types: {order_id: string, product_id: string, warehouse_id: string, quantity: integer,
+                   requested_date: date, status: string}
+    units: EA
+    granularity: one sales order line
+    known_limitations: [returns are updated the following day]
+    approved_use_cases: [demand forecasting, executive reporting]
+    classification: internal
+    permitted_users: [planners, logistics managers, supply-chain director]
+    permitted_purposes: [supply_chain_planning]
+
+  ariba_pos:
+    <<: *defaults
+    name: Open purchase orders
+    description: Purchase orders placed with suppliers and their expected delivery dates.
+    business_domain: procurement
+    business_owner: Procurement team (fictional)
+    technical_owner: SAP Ariba team (fictional)
+    source_system: SAP Ariba
+    source_location: Ariba Purchase Orders API
+    source_record_id: po_id
+    transformation_history: [supplier IDs mapped to the SAP vendor master]
+    lineage: [SAP Ariba, connector v0.9, staging, readiness gate, procurement agent]
+    change_history: ["2026-09-01 status delivered added"]
+    business_definitions: {due_date: "Supplier-confirmed or expected delivery date"}
+    schema_types: {po_id: string, supplier_id: string, material_id: string, quantity: integer, price_eur: decimal,
+                   due_date: date, status: string}
+    units: EA
+    granularity: one purchase order line
+    restricted_columns: {price_eur: supplier purchase price (column-level ACL)}
+    known_limitations: [partial deliveries are not split]
+    approved_use_cases: [replenishment, supplier risk, stock transfers]
+    classification: confidential
+    permitted_users: [procurement managers, planners, supply-chain director]
+    permitted_purposes: [supply_chain_planning]
+
+  qm_inspection_lots:
+    <<: *defaults
+    name: Inspection lots
+    description: Quality inspection results and usage decisions per batch.
+    business_domain: quality
+    business_owner: Quality team (fictional)
+    technical_owner: SAP QM team (fictional)
+    source_system: SAP QM
+    source_location: API_INSPECTIONLOT_SRV
+    source_record_id: lot_id
+    transformation_history: [usage decision codes mapped to accepted | rejected | pending]
+    lineage: [SAP QM, connector v1.0, staging, readiness gate, quality and procurement agents]
+    change_history: ["2026-06-20 pending added"]
+    business_definitions: {usage_decision: "accepted | rejected | pending"}
+    schema_types: {lot_id: string, product_id: string, batch_id: string, result: string, usage_decision: string,
+                   decided_on: date}
+    units: none
+    granularity: one inspection lot
+    known_limitations: [only finished-product lots]
+    approved_use_cases: [quality release, supplier risk]
+    classification: internal
+    permitted_users: [quality managers, procurement managers, supply-chain director]
+    permitted_purposes: [supply_chain_planning]
+
+  mdg_material_master:
+    <<: *defaults
+    name: Material master
+    description: Governed product master data (unit, shelf life, status).
+    business_domain: master data
+    business_owner: Master Data Office (fictional)
+    technical_owner: SAP MDG team (fictional)
+    source_system: SAP MDG
+    source_location: MDG material governance
+    source_record_id: product_id
+    transformation_history: [none]
+    lineage: [SAP MDG, connector v1.0, staging, readiness gate, all planning agents]
+    change_history: ["2026-10-30 shelf_life_days reviewed"]
+    business_definitions: {shelf_life_days: "Total shelf life from production"}
+    schema_types: {product_id: string, description: string, uom: string, shelf_life_days: integer, status: string}
+    units: days; EA
+    granularity: one product
+    known_limitations: [cosmetics SKUs only]
+    approved_use_cases: [demand forecasting, replenishment, executive reporting]
+    classification: internal
+    permitted_users: [all planning roles]
+    permitted_purposes: [supply_chain_planning]
+
+  ariba_contracts:
+    <<: *defaults
+    name: Approved policies and supplier agreements
+    description: Approved supplier agreements, purchasing policy and warehouse transfer policy (document collection for RAG).
+    business_domain: procurement
+    business_owner: Procurement team (fictional)
+    technical_owner: Knowledge Platform team (fictional)
+    source_system: SAP Ariba Contracts
+    source_location: Ariba contract workspace export
+    source_record_id: doc_id
+    transformation_history: [PDF to markdown, chunked 800/100 tokens]
+    lineage: [SAP Ariba Contracts, export job v1.0, document store, RAG index v3, procurement agent]
+    change_history: ["2026-11-02 AGR-SUP-A v2.0 approved"]
+    business_definitions: {status: "approved | draft | revoked | superseded"}
+    schema_types: {doc_id: string, title: string, version: string, source_id: string, status: string,
+                   valid_from: date, valid_to: date, supplier_id: string}
+    units: none
+    granularity: one document version
+    known_limitations: [annexes are not indexed]
+    approved_use_cases: [supplier policy questions, supplier risk]
+    classification: confidential
+    permitted_users: [procurement managers, planners, supply-chain director]
+    permitted_agents: [agent:procurement-agent, agent:supervisor-agent]
+    permitted_purposes: [supply_chain_planning]
+    document_authority: Procurement-approved; published by the Procurement team in SAP Ariba
+    rag_index_version: "markdown chunker 800/100 · bge-small-en-v1.5 · index v3"

@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Data Readiness</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f5bd3'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg:#f4f6f9; --panel:#ffffff; --panel2:#f8fafc; --ink:#111827; --ink2:#374151; --muted:#6b7280; --line:#e5e7eb; --line2:#eef0f3;
+  --accent:#2f5bd3; --accent-ink:#ffffff; --accent-soft:#eaf0ff; --accent2:#7c3aed;
+  --ok:#15803d; --okbg:#e7f6ec; --warn:#a16207; --warnbg:#fdf3dc; --bad:#b91c1c; --badbg:#fdecec;
+  --shadow:0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.06); --radius:14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#0d1117; --panel:#151b24; --panel2:#1a212c; --ink:#e8ecf2; --ink2:#c8d0db; --muted:#94a0b2; --line:#263040; --line2:#1f2834;
+  --accent:#7aa2ff; --accent-ink:#0d1117; --accent-soft:#1b2640; --accent2:#a78bfa;
+  --ok:#5fd39a; --okbg:#12301f; --warn:#f4c15d; --warnbg:#352a10; --bad:#ff8a80; --badbg:#3a1a19;
+  --shadow:0 1px 2px rgba(0,0,0,.4); } }
+:root[data-theme="dark"] {  /* embedded in SPARC: follow the host app's theme */
+  --bg:#0d1117; --panel:#151b24; --panel2:#1a212c; --ink:#e8ecf2; --ink2:#c8d0db; --muted:#94a0b2; --line:#263040; --line2:#1f2834;
+  --accent:#7aa2ff; --accent-ink:#0d1117; --accent-soft:#1b2640; --accent2:#a78bfa;
+  --ok:#5fd39a; --okbg:#12301f; --warn:#f4c15d; --warnbg:#352a10; --bad:#ff8a80; --badbg:#3a1a19;
+  --shadow:0 1px 2px rgba(0,0,0,.4); }
+.embed header { position:static; } .embed .card { scroll-margin-top:12px; }
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing:antialiased; }
+.wrap { max-width:1440px; margin:0 auto; padding:0 24px; }
+code { font:12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:var(--panel2); border:1px solid var(--line2); padding:1px 5px; border-radius:5px; }
+p { margin:6px 0; } .muted { color:var(--muted); } .hidden { display:none !important; }
+
+/* ---------- app bar + workflow ---------- */
+header { background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; box-shadow:var(--shadow); }
+.bar { display:flex; align-items:center; gap:14px; padding:12px 0 10px; }
+.logo { width:34px; height:34px; border-radius:9px; background:linear-gradient(135deg, var(--accent), var(--accent2)); display:grid; place-items:center; flex:0 0 auto; }
+.brand h1 { font-size:17px; margin:0; letter-spacing:-.01em; } .brand .tag { font-size:12.5px; color:var(--muted); }
+.bar .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+.chip { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:4px 10px; border-radius:999px; border:1px solid var(--line); color:var(--ink2); background:var(--panel2); white-space:nowrap; }
+.chip .dot { width:7px; height:7px; border-radius:50%; background:var(--warn); }
+.flow { display:flex; flex-wrap:wrap; align-items:center; gap:6px 6px; font-size:12px; color:var(--muted); margin-top:14px; }
+.flow .st { background:var(--panel2); border:1px solid var(--line2); border-radius:999px; padding:3px 9px 3px 4px; }
+.flow .st { display:inline-flex; align-items:center; gap:5px; } .flow b { color:var(--ink2); font-weight:600; } .flow .sep { color:var(--line); }
+.num { display:inline-grid; place-items:center; width:18px; height:18px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:11px; font-weight:700; flex:0 0 auto; }
+.controls { display:grid; grid-template-columns:1.2fr 1.1fr .85fr 1fr .95fr .85fr 1.35fr .95fr 1.15fr; gap:8px; padding-bottom:12px; }
+#pending.has { border-color:var(--warn); background:var(--warnbg); color:var(--warn); font-weight:700; }
+.step { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.step > .lbl { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+select, button, .ro, input { font:inherit; font-size:13.5px; border:1px solid var(--line); border-radius:9px; padding:8px 11px; background:var(--panel); color:var(--ink); min-width:0; width:100%; height:38px; }
+select:focus, button:focus-visible, input:focus { outline:2px solid var(--accent); outline-offset:1px; }
+.ro { background:var(--panel2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; display:flex; align-items:center; }
+.pair { display:flex; gap:6px; } .pair select { flex:1 1 auto; } .pair button { width:auto; flex:0 0 auto; }
+button { cursor:pointer; white-space:nowrap; font-weight:600; transition:background .15s, border-color .15s, opacity .15s; }
+button:hover:not(:disabled) { border-color:var(--accent); }
+button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+button.primary:hover:not(:disabled) { filter:brightness(1.07); }
+button:disabled { opacity:.45; cursor:not-allowed; }
+button.link { border:none; background:none; color:var(--muted); text-decoration:underline; padding:0 4px; height:auto; width:auto; font-weight:500; }
+button.ghost { width:auto; height:30px; padding:4px 12px; font-size:12.5px; background:var(--panel2); }
+button.howbtn { margin-left:6px; color:var(--accent); border-color:var(--accent-soft); background:var(--accent-soft); }
+button.danger { color:var(--bad); } button.danger:hover:not(:disabled) { border-color:var(--bad); background:var(--badbg); }
+
+/* ---------- content ---------- */
+main { padding:20px 0 48px; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:18px; overflow:hidden; scroll-margin-top:190px; }
+.card > .head { display:flex; align-items:center; gap:10px; padding:14px 20px; border-bottom:1px solid var(--line2); }
+.card > .head h2 { font-size:15px; margin:0; letter-spacing:-.01em; } .card > .head .sub { color:var(--muted); font-size:13px; }
+.card > .head .num { width:24px; height:24px; font-size:12px; }
+.card > .body { padding:16px 20px; overflow-x:auto; }
+h3 { font-size:14px; margin:18px 0 8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; } h3:first-child { margin-top:4px; }
+table { border-collapse:separate; border-spacing:0; width:100%; font-size:13px; border:1px solid var(--line2); border-radius:10px; overflow:hidden; }
+th, td { border-bottom:1px solid var(--line2); padding:8px 12px; text-align:left; vertical-align:top; }
+tr:last-child td { border-bottom:none; }
+th { color:var(--muted); font-weight:600; background:var(--panel2); white-space:nowrap; font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; }
+tbody tr:hover td { background:var(--panel2); }
+tr.group td { background:var(--panel2); color:var(--muted); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.06em; padding:6px 12px; }
+td[class^="s-"] { white-space:nowrap; font-weight:700; } td.cause { color:var(--muted); max-width:380px; }
+td.s-FAIL, td.s-ERROR { color:var(--bad); } td.s-WARN { color:var(--warn); } td.s-PASS { color:var(--ok); } td.s-NA, td.s-INFO { color:var(--muted); font-weight:500; }
+tbody tr:has(td.s-FAIL) td, tbody tr:has(td.s-ERROR) td { background:var(--badbg); }
+tbody tr:has(td.s-WARN) td { background:var(--warnbg); }
+td.bad { background:var(--badbg); } td.warn { background:var(--warnbg); } td.ok { color:var(--ok); }
+.pill { display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; font-weight:700; font-size:11.5px; letter-spacing:.02em; }
+.READY { color:var(--ok); background:var(--okbg); } .READY_WITH_WARNINGS { color:var(--warn); background:var(--warnbg); } .BLOCKED { color:var(--bad); background:var(--badbg); }
+.yes { color:var(--ok); font-weight:600; } .no { color:var(--bad); font-weight:600; }
+.facts { display:flex; flex-wrap:wrap; gap:6px 22px; margin:0 0 10px; font-size:13px; } .facts b { color:var(--muted); font-weight:600; margin-right:4px; }
+ul.missing { margin:8px 0 10px; padding:0; list-style:none; display:grid; gap:4px; }
+ul.missing li { padding:6px 10px; border-left:3px solid var(--bad); background:var(--badbg); border-radius:0 8px 8px 0; font-size:13px; }
+.next { color:var(--muted); font-size:13px; display:flex; align-items:center; gap:6px; margin-top:8px; }
+.statusline { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13px; }
+
+/* ---------- about ---------- */
+.about > .head { cursor:pointer; user-select:none; }
+.about > .head .chev { margin-left:auto; color:var(--muted); transition:transform .2s; }
+.about.closed > .head .chev { transform:rotate(-90deg); }
+.about.closed > .body { display:none; }
+.hero { display:grid; grid-template-columns:1.4fr 1fr; gap:24px; align-items:center; padding:4px 0 18px; border-bottom:1px solid var(--line2); margin-bottom:18px; }
+.hero h2 { font-size:22px; line-height:1.3; margin:0 0 8px; letter-spacing:-.02em; }
+.hero p { color:var(--ink2); font-size:14.5px; margin:0; max-width:760px; }
+.stats { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; }
+.stat { background:var(--panel2); border:1px solid var(--line2); border-radius:12px; padding:12px 14px; }
+.stat b { display:block; font-size:22px; letter-spacing:-.02em; } .stat span { color:var(--muted); font-size:12px; }
+.trio { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:22px; }
+.box { border:1px solid var(--line2); border-radius:12px; padding:14px 16px; background:var(--panel); }
+.box h4 { margin:0 0 6px; font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); }
+.box p, .box li { color:var(--ink2); font-size:13.5px; } .box ul, .box ol { margin:6px 0 0; padding-left:18px; } .box li { margin:3px 0; }
+.sectitle { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; margin:0 0 10px; }
+.features { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; }
+.feat { border:1px solid var(--line2); border-radius:12px; padding:13px 14px; background:var(--panel); display:flex; flex-direction:column; gap:5px; }
+.feat .k { display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; }
+.feat .ic { width:26px; height:26px; border-radius:7px; display:grid; place-items:center; background:var(--accent-soft); color:var(--accent); font-size:11.5px; font-weight:800; flex:0 0 auto; font-variant-numeric:tabular-nums; }
+.feat p { margin:0; color:var(--ink2); font-size:13px; } .feat .tech { margin-top:auto; padding-top:4px; color:var(--muted); font-size:11.5px; }
+.whatsnext { margin-top:14px; border:1px solid var(--line2); border-left:4px solid var(--accent); border-radius:0 12px 12px 0; padding:12px 14px; background:var(--panel2); }
+.whatsnext h4 { margin:0 0 6px; font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); }
+.whatsnext .row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:6px 0; font-size:13.5px; }
+.whatsnext .row.ready { color:var(--ok); font-weight:600; }
+.whatsnext button, .req button { width:auto; height:34px; }
+.req { border:1px solid var(--line2); border-radius:12px; padding:12px 14px; margin-bottom:12px; }
+.req .top { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; font-size:13.5px; }
+.req .acts { display:flex; gap:8px; margin-top:10px; }
+.certified { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 12px; font-size:13px; }
+.certified .chip { background:var(--okbg); color:var(--ok); border-color:transparent; }
+.legend { display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:16px; padding-top:14px; border-top:1px solid var(--line2); font-size:13px; color:var(--ink2); align-items:center; }
+
+@media (max-width:1180px) { .features { grid-template-columns:repeat(3, 1fr); } .hero { grid-template-columns:1fr; } }
+@media (max-width:1180px) { .controls { grid-template-columns:repeat(5, minmax(0, 1fr)); } }
+@media (max-width:1000px) { .controls { grid-template-columns:repeat(4, minmax(0, 1fr)); } .trio { grid-template-columns:1fr; } .features { grid-template-columns:repeat(2, 1fr); } }
+@media (max-width:760px) { .wrap { padding:0 16px; } .controls, .features { grid-template-columns:minmax(0, 1fr); } .stats { grid-template-columns:repeat(2, 1fr); }
+  header { position:static; } .bar .right .chip.opt { display:none; } .card { scroll-margin-top:12px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="bar">
+      <div class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <div class="brand"><h1>Task Data Readiness</h1><div class="tag">Readiness gate for AI agents on supply-chain data</div></div>
+      <button class="ghost howbtn" id="aboutBtn" type="button" title="What it is, the problem it solves, how readiness is assessed and how to use it">ⓘ How it works</button>
+      <div class="right">
+        <span class="chip opt"><span class="dot"></span>DEMO · simulated SAP data</span>
+        <button class="ghost danger" id="reset" type="button" title="Reverse all fixes: upstream rules, fixed data sets, certified versions, approval requests and test results. The original faults come back on the next Run checks.">↺ Reset data</button>      </div>
+    </div>
+    <div class="controls">
+      <label class="step"><span class="lbl"><span class="num">1</span>User role</span><select id="role"></select></label>
+      <label class="step"><span class="lbl"><span class="num">2</span>Requested task</span><select id="task"></select></label>
+      <div class="step"><span class="lbl"><span class="num">3</span>Authorized data</span><span class="ro" id="authBox">—</span></div>
+      <div class="step"><span class="lbl"><span class="num">4</span>Readiness profile</span><span class="ro" id="profileBox">—</span></div>
+      <label class="step"><span class="lbl"><span class="num">5</span>Data set</span><select id="dataset"></select></label>
+      <div class="step"><span class="lbl"><span class="num">6</span>Readiness checks</span><button class="primary" id="detect">Run checks</button></div>
+      <div class="step"><span class="lbl"><span class="num">7</span>Propose fixes</span><span class="pair"><select id="agent" aria-label="Correction agent"></select><button id="propose" disabled>Propose</button></span></div>
+      <div class="step"><span class="lbl"><span class="num">8</span>Apply fixes</span><button id="apply" disabled>Approve &amp; apply</button></div>
+      <label class="step"><span class="lbl"><span class="num">9</span>Fixes to approve</span><select id="pending" title="Pending approval requests and the roles that may approve them"><option value="">none pending</option></select></label>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card about" id="about">
+    <div class="head" id="aboutHead" role="button" tabindex="0" aria-expanded="true">
+      <h2>How it works</h2><span class="sub">what it is · the problem it solves · how readiness is assessed · how to use it</span>
+      <span class="chev">▾</span>
+    </div>
+    <div class="body">
+      <div class="hero">
+        <div>
+          <h2>Is this data fit for this AI task, for this user and this agent, right now?</h2>
+          <p>Task Data Readiness is a gate that runs <b>before</b> an AI agent touches supply-chain data. It checks that the
+          data a task needs is authorized, current, complete, traceable and covered by a valid contract. Then it either
+          releases only the authorized data, or explains exactly what is missing, why, and how to fix it.</p>
+          <div class="flow" id="flow"></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><b id="statRoles">–</b><span>user roles</span></div>
+          <div class="stat"><b id="statTasks">–</b><span>AI tasks, one profile each</span></div>
+          <div class="stat"><b id="statSystems">–</b><span>simulated SAP data sets</span></div>
+          <div class="stat"><b id="statSets">–</b><span>test extracts for the selected task</span></div>
+        </div>
+      </div>
+
+      <div class="trio">
+        <div class="box">
+          <h4>What it is</h4>
+          <p>A deterministic readiness engine with a guided workflow. Every AI task (compare stock, recommend a transfer,
+          propose purchase orders, answer a policy question…) has a versioned, approved <b>Data Readiness Profile</b>:
+          which data it needs and the rules that data must meet. The engine checks the actual data against that profile
+          and returns <b>READY</b>, <b>READY WITH WARNINGS</b> or <b>BLOCKED</b>, with evidence for every check.</p>
+        </div>
+        <div class="box">
+          <h4>Why: the problem it solves</h4>
+          <p>AI agents answer confidently even when their data is wrong for the job:</p>
+          <ul>
+            <li>stale stock levels, so the agent recommends the wrong transfer</li>
+            <li>missing warehouses, lanes or periods, so the plan is incomplete</li>
+            <li>unknown units, codes or duplicate rows, so the numbers are wrong</li>
+            <li>data the user may not see (e.g. supplier prices) leaking through the agent</li>
+            <li>expired or superseded contracts quoted as if they were current</li>
+          </ul>
+          <p>Generic data-quality tools check a dataset in general. This gate checks fitness for <b>this task, this
+          user and this agent</b> at the moment of use.</p>
+        </div>
+        <div class="box">
+          <h4>How to use it</h4>
+          <ol>
+            <li><b>Pick a user role</b>, then a <b>task</b> that role may request.</li>
+            <li>Read <b>3 Authorized data</b> (allowed vs required) and <b>4 the readiness profile</b>.</li>
+            <li>Choose a <b>data set</b>. It does not say whether it is faulty; the checks find out.</li>
+            <li>Click <b>Run checks</b>: every metric shows its value, status, fix and root cause.</li>
+            <li>If BLOCKED: <b>Propose</b> fixes (mock agent or Claude), then <b>Approve &amp; apply</b>. The engine re-checks. Fixes you may not approve: click <b>Request approval</b>; the approver finds them in <b>Approval requests for you</b> when they open the page as their role.</li>
+            <li>If READY: each data set that passed is <b>certified and published</b> as a new version, ingested into the RAG index, and the agent reads only that certified data (ask it questions in the search box).</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="sectitle">How AI readiness is assessed: every check the gate runs</div>
+      <div class="features">
+        <div class="feat"><div class="k"><span class="ic">01</span>Role → task → profile</div><p>A role can request only its own tasks. Each task has exactly one approved, versioned profile. The engine never falls back to a weaker profile.</p><div class="tech">roles.yaml · tasks.yaml</div></div>
+        <div class="feat"><div class="k"><span class="ic">02</span>Access: user and agent</div><p>Checked separately for the user and the agent, at data-set, row (warehouse), column (e.g. supplier prices) and purpose level. Restricted data sets are not even named.</p><div class="tech">ACL per role · catalog permitted agents</div></div>
+        <div class="feat"><div class="k"><span class="ic">03</span>Catalog and contract</div><p>One file per data set holds the owner, steward, source, definitions, classification, schema, quality rules and SLAs. It is validated against the official standard.</p><div class="tech">ODCS v3.1.0 · JSON Schema validation</div></div>
+        <div class="feat"><div class="k"><span class="ic">04</span>Freshness</div><p>Source event time is compared with the task's own limit: inventory ≤ 2 h for a transfer, but 48 h is fine for a weekly report.</p><div class="tech">profile override · contract SLA latency</div></div>
+        <div class="feat"><div class="k"><span class="ic">05</span>Coverage</div><p>The rows must cover the requested product, warehouses, transfer lane and planning period. A missing partition blocks the task.</p><div class="tech">task context vs actual rows</div></div>
+        <div class="feat"><div class="k"><span class="ic">06</span>Quality</div><p>Required values, allowed codes and units, ISO dates, non-negative quantities and duplicate keys, checked only on the rows this task uses.</p><div class="tech">contract quality rules</div></div>
+        <div class="feat"><div class="k"><span class="ic">07</span>Provenance and lineage</div><p>Source system, snapshot version and ingestion time. Every extract, check, fix and retrieval is recorded as a standard lineage event.</p><div class="tech">OpenLineage events</div></div>
+        <div class="feat"><div class="k"><span class="ic">08</span>Documents and secure search</div><p>Only approved, currently valid documents count. Search results are filtered inside the vector query by the user's document groups, with citations.</p><div class="tech">Chroma · local embeddings · ACL filter</div></div>
+        <div class="feat"><div class="k"><span class="ic">09</span>Root cause</div><p>Each failing metric gets a root cause worked out from measured evidence (e.g. "uom contains 'KG', not allowed"), never guessed.</p><div class="tech">check evidence · offending values</div></div>
+        <div class="feat"><div class="k"><span class="ic">10</span>Fix proposals</div><p>Fixes come only from an allow-list: reload from the SAP source of record, the steward registry, or a lossless transform. Proposed by the mock agent or by Claude.</p><div class="tech">allow-listed actions · Claude optional</div></div>
+        <div class="feat"><div class="k"><span class="ic">11</span>Human approval loop</div><p>Only the domain owner may approve a fix; agents never approve. Approved fixes become upstream rules, so the next extraction is cleaner.</p><div class="tech">per-domain approvers · round history</div></div>
+        <div class="feat"><div class="k"><span class="ic">12</span>Use-time gate and evidence</div><p>The gate re-checks just before data is released, then hands the agent only permitted rows and columns. Each run gets an evaluation id, timings and an audit record.</p><div class="tech">re-check · audit log · metrics</div></div>
+      </div>
+      <div class="legend">
+        <span><span class="pill READY">READY</span> every mandatory check passes: data is released</span>
+        <span><span class="pill READY_WITH_WARNINGS">READY WITH WARNINGS</span> only optional data has issues</span>
+        <span><span class="pill BLOCKED">BLOCKED</span> a mandatory check failed or is unknown: nothing is released</span>
+        <span class="muted">The role is a demo selector, not authentication. The gate is one barrier; databases and APIs must enforce access too. Use <b>↺ Reset data</b> (top right) to reverse all fixes and bring the original faults back.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card hidden" id="inbox"><div class="head"><span class="pill READY_WITH_WARNINGS" id="inboxCount">0</span><h2>Approval requests for you</h2><span class="sub">fixes other roles asked you to approve</span></div><div class="body" id="inboxBody"></div></section>
+  <section class="card"><div class="head"><span class="num">3</span><h2>Authorized data</h2><span class="sub">allowed for this user and agent vs required by the task</span></div><div class="body" id="authBody"></div></section>
+  <section class="card"><div class="head"><span class="num">4</span><h2>Data readiness profile</h2><span class="sub">what this task needs and the rules its data must meet</span></div><div class="body" id="profileBody"></div></section>
+  <section class="card hidden" id="check"><div class="head"><span class="num">6</span><h2>Readiness checks</h2><span class="sub">what is missing, with recommended fix and root cause</span></div><div class="body"><div id="status"></div><div id="missing"></div><div id="checkBody"></div></div></section>
+  <section class="card hidden" id="fixes"><div class="head"><span class="num">7</span><h2>Proposed fixes</h2><span class="sub">one fix per missing metric; where the data comes from and who approves</span></div><div class="body" id="agentTable"></div></section>
+  <section class="card hidden" id="applied"><div class="head"><span class="num">8</span><h2>Fixes applied and re-checked</h2></div><div class="body" id="resultBody"></div></section>
+  <section class="card hidden" id="ready"><div class="head"><span class="pill READY">READY</span><h2>Retrieve authorized data and run the task</h2></div><div class="body" id="readyBody"></div></section>
+</main>
+<script>
+const STEPS = ["User role", "Requested task", "Authorized data", "Data readiness profile", "Data set", "Readiness checks", "Propose fixes", "Apply fixes", "Fixes to approve"];
+const $ = (id) => document.getElementById(id);
+// Served standalone (/dashboard) or embedded in SPARC through its gateway (/data-readiness/dashboard?embed=1&role=...)
+const BASE = location.pathname.replace(/\/(dashboard|table)?\/?$/, "");
+const PARAMS = new URLSearchParams(location.search);
+const host = (() => { try { return window.parent !== window && window.parent.SPARC ? window.parent : null; } catch { return null; } })();
+if (PARAMS.get("embed")) {
+  document.documentElement.classList.add("embed");
+  try { const t = host && host.document.documentElement.dataset.theme; if (t) document.documentElement.dataset.theme = t; } catch { /* cross-origin */ }
+}
+const hostAuth = () => { try { return host ? host.SPARC.authHeaders() : {}; } catch { return {}; } };
+$("flow").innerHTML = STEPS.map((s, i) => `<span class="st"><span class="num">${i + 1}</span><b>${s}</b></span>`).join('<span class="sep">→</span>') +
+  `<span class="sep">→</span><span class="st"><span class="pill READY">READY</span><b>retrieve authorized data and run the task</b></span>`;
+// About panel: open by default, remembered per browser (best effort)
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } } };
+function setAbout(open) { $("about").classList.toggle("closed", !open); $("aboutHead").setAttribute("aria-expanded", String(open)); store.set("tdr.about", open ? "open" : "closed"); }
+setAbout(store.get("tdr.about") !== "closed");
+$("aboutHead").onclick = () => setAbout($("about").classList.contains("closed"));
+$("aboutHead").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("aboutHead").click(); } };
+$("aboutBtn").onclick = () => {  // How it works: open + scroll to it, or collapse it when already open
+  const open = $("about").classList.contains("closed");
+  setAbout(open);
+  if (open) $("about").scrollIntoView({ block: "start" });
+};
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>").replace(/`(.+?)`/g, "<code>$1</code>");
+function md(text) {  // minimal markdown for the API's own tables and paragraphs
+  const out = []; let tbl = [];
+  const flush = () => {
+    if (!tbl.length) return;
+    const rows = tbl.filter((r) => !/^\|\s*-/.test(r)).map((r) => r.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim()));
+    out.push("<table><thead><tr>" + rows[0].map((c) => `<th>${inline(c)}</th>`).join("") + "</tr></thead><tbody>" +
+      rows.slice(1).map((r) => "<tr>" + r.map((c) => {
+        const cls = c.startsWith("✗") ? "bad" : c.startsWith("⚠") ? "warn" : c.startsWith("✓") ? "ok" : "";
+        return `<td class="${cls}">${inline(c)}</td>`; }).join("") + "</tr>").join("") + "</tbody></table>");
+    tbl = [];
+  };
+  for (const line of String(text || "").split("\n")) {
+    if (line.trim().startsWith("|")) { tbl.push(line); continue; }
+    flush(); if (line.trim()) out.push(`<p>${inline(line)}</p>`);
+  }
+  flush(); return out.join("");
+}
+async function api(path, body) {
+  const headers = { "Content-Type": "application/json", ...hostAuth() };
+  const res = await fetch(BASE + path, body === undefined ? { headers } : { method: "POST", headers, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data.error && data.error.message) || data.detail || (res.status === 401 ? "Sign in to SPARC first" : res.statusText));
+  return data;
+}
+const sel = () => ({ role: $("role").value, task: $("task").value });
+const show = (id, on = true) => $(id).classList.toggle("hidden", !on);
+const yn = (b, why) => `<span class="${b ? "yes" : "no"}" title="${esc(why || "")}">${b ? "yes" : "no"}</span>`;
+const LABEL = { PASS: "✓ pass", FAIL: "✗ missing", ERROR: "✗ unknown", WARN: "⚠ warning", NA: "n/a", INFO: "info" };
+const next = (n, text) => `<div class="next">Next: <span class="num">${n}</span>${text}</div>`;
+function clearResults() {
+  ["check", "fixes", "applied", "ready"].forEach((id) => show(id, false));
+  $("propose").disabled = true; $("apply").disabled = true;
+}
+function checklistHtml(list) {
+  return list.map((src) => {
+    const missing = src.rows.filter((r) => r.status === "FAIL" || r.status === "ERROR").length;
+    const warn = src.rows.filter((r) => r.status === "WARN").length;
+    const head = missing ? `<span class="pill BLOCKED">${missing} missing</span>` : warn ? `<span class="pill READY_WITH_WARNINGS">${warn} warning</span>` : `<span class="pill READY">AI-ready</span>`;
+    let group = "", body = "";
+    for (const r of src.rows) {
+      if (r.group !== group) { group = r.group; body += `<tr class="group"><td colspan="5">${esc(group)}</td></tr>`; }
+      body += `<tr><td>${esc(r.metric)}</td><td>${esc(r.value)}</td><td class="s-${r.status}">${LABEL[r.status] || esc(r.status)}</td><td>${esc(r.fix || (r.status === "PASS" ? "—" : ""))}</td><td class="cause">${esc(r.cause || (r.status === "PASS" ? "—" : ""))}</td></tr>`;
+    }
+    return `<h3>${esc(src.source)}${src.mandatory === false ? ' <span class="muted">· optional</span>' : ""} ${head}</h3><table><thead><tr><th>Readiness metric</th><th>Current value</th><th>Status</th><th>Recommended fix</th><th>Root cause</th></tr></thead><tbody>${body}</tbody></table>`;
+  }).join("");
+}
+function showCheck(r) {  // step 6 result; READY -> retrieve; BLOCKED -> enable step 7
+  const items = r.checklist.flatMap((src) => src.rows.filter((x) => x.status === "FAIL" || x.status === "ERROR").map((x) => `<li><b>${esc(src.source)}</b>: ${esc(x.metric)} → ${esc(x.value)}</li>`));
+  $("missing").innerHTML = `<p class="statusline"><span class="pill ${r.decision}">${r.decision.replaceAll("_", " ")}</span> ${r.score}% of the required data sources meet every check <span class="muted">· evaluation <code>${esc(r.evaluation_id)}</code> · ${r.latency_ms} ms</span></p>` +
+    (r.ready ? "" : `<p>${inline(r.answer)}</p><ul class="missing">${items.join("")}</ul>${next(7, "Propose fixes")}`);
+  $("checkBody").innerHTML = checklistHtml(r.checklist);
+  $("propose").disabled = r.ready;
+  show("check");
+}
+function certifiedHtml(published, fixed) {
+  const saved = fixed ? `<div class="certified"><b>Fixed data set saved:</b><span class="chip">✓ ${esc(fixed.id)}</span><span class="muted">${esc(fixed.label)} · pick it in <b>5 · Data set</b></span></div>` : "";
+  if (!published || !published.length) return saved;
+  return `<div class="certified"><b>Certified &amp; published:</b>` + published.map((p) =>
+    `<span class="chip" title="sha256 ${esc(p.sha256)} · certified for ${esc(p.certified_for.join(", "))}${p.fixes_applied.length ? " · fixes: " + esc(p.fixes_applied.map((f) => f.action.replaceAll("_", " ")).join(", ")) : ""}">✓ ${esc(p.label)} v${p.version}${p.new ? ` · new, ${p.chunks} rows ingested into RAG` : ""}</span>`).join("") +
+    `<span class="muted">agents read only these certified versions</span></div>` + saved;
+}
+async function showReady(r) {
+  if (!r.ready) { show("ready", false); return; }
+  const out = await api("/pipeline/retrieve", sel());
+  const doc = out.search;  // policy task: search the documents; other tasks: search the certified data sets
+  $("readyBody").innerHTML = certifiedHtml(r.published, r.fixed_dataset) + (r.decision === "READY_WITH_WARNINGS" ? `<p><span class="pill READY_WITH_WARNINGS">with warnings</span> ${inline(r.answer)}</p>` : "") + md(out.text) +
+    `<h3>${doc ? "Ask your own question" : "Ask the certified data"} <span class="muted" style="font-weight:500">${doc ? "permission-aware document search" : "RAG over the published data sets, with your access rules"}</span></h3>
+    <div class="pair" style="max-width:760px"><input id="q" placeholder="${doc ? "e.g. who approves transfers above 2,000 units?" : "e.g. released stock of SKU-001 in WH-C"}"><button class="primary" id="ask">Search</button></div><div id="answer"></div>`;
+  $("ask").onclick = () => run($("ask"), async () => {
+    const q = $("q").value.trim(); if (q.length < 2) return;
+    const s = await api(doc ? "/pipeline/search" : "/pipeline/search-data", { ...sel(), query: q });
+    $("answer").innerHTML = md(s.text);
+  });
+  $("q").onkeydown = (e) => { if (e.key === "Enter") $("ask").click(); };
+  show("ready");
+}
+function nextHtml(steps) {
+  return `<div class="whatsnext"><h4>What's next</h4>` + steps.map((s) => s.kind === "request"
+    ? `<div class="row"><span>${esc(s.text)}</span><button class="primary" id="reqBtn">Request approval</button></div><div id="reqOut"></div>`
+    : `<div class="row ${s.kind === "ready" ? "ready" : ""}">${s.kind === "ready" ? "✓ " : ""}${esc(s.text)}</div>`).join("") + `</div>`;
+}
+const fixLabel = (f) => `${f.action.replaceAll("_", " ")}${f.column ? " · " + f.column : ""}${f.values && f.values.length ? " · " + f.values.join(", ") : ""}`;
+async function loadInbox() {
+  const reqs = await api(`/pipeline/requests?role=${encodeURIComponent($("role").value)}`);
+  show("inbox", reqs.length > 0);
+  $("inboxCount").textContent = reqs.length;
+  $("inboxBody").innerHTML = reqs.map((q) => `<div class="req" data-id="${q.id}">
+      <div class="top"><b>Request #${q.id}</b><span>from <b>${esc(q.requested_by_title || q.requested_by)}</b></span><span class="muted">· task ${esc(q.task)} · data set ${esc(q.dataset || "—")} · ${q.fixes.length} fix(es) for you · ${esc(q.requested_at.slice(0, 16).replace("T", " "))}</span>${(q.history || []).map((h) => `<span class="chip">${esc(h.by)} ${esc(h.decision)} ${h.fixes}</span>`).join("")}</div>
+      <table><thead><tr><th>Data set</th><th>Fix</th><th>Data from</th><th>Why</th></tr></thead><tbody>` +
+      q.fixes.map((f) => `<tr><td>${esc(f.requirement)}</td><td>${esc(fixLabel(f))}</td><td>${esc(f.source)}</td><td class="muted">${esc(f.rationale)}</td></tr>`).join("") +
+      `</tbody></table><div class="acts"><button class="primary" data-decide="1">Approve &amp; apply</button><button data-decide="0">Reject</button></div><div class="out"></div></div>`).join("");
+  document.querySelectorAll("#inboxBody [data-decide]").forEach((b) => b.onclick = () => run(b, async () => {
+    const box = b.closest(".req");
+    const d = await api(`/pipeline/requests/${box.dataset.id}/decide`, { role: $("role").value, approve: b.dataset.decide === "1" });
+    const badge = d.status === "approved" ? `<span class="pill READY">✓ Approved by ${esc($("role").selectedOptions[0].text.split(" (")[0])} · nothing left to approve</span>`
+      : d.status === "rejected" ? `<span class="pill BLOCKED">✗ Rejected · nothing was changed</span>`
+      : `<span class="pill READY_WITH_WARNINGS">Partly approved · the rest waits for another approver</span>`;
+    box.querySelector(".acts").innerHTML = badge;  // decided: replace the buttons with a clear outcome
+    box.querySelector(".out").innerHTML = md(d.text) + (d.after ? certifiedHtml(d.after.published, d.after.fixed_dataset) : "");
+    await Promise.all([loadDatasets(), loadPending()]);
+    return true;
+  }));
+}
+function renderView(v) {
+  const r = v.role, p = v.profile;
+  $("task").innerHTML = v.tasks.map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("");
+  $("task").value = p.id;
+  $("profileBox").textContent = p.id;
+  $("profileBox").title = `${p.id} v${p.version} · ${p.name}`;
+  const allowed = v.sources.filter((s) => s.allowed).length;
+  $("authBox").textContent = `${allowed}/${v.sources.length} allowed`;
+  $("authBox").title = `${allowed} of ${v.sources.length} required data sources are allowed for this user and agent`;
+  $("authBox").style.color = allowed === v.sources.length ? "var(--ok)" : "var(--bad)";
+  const actions = Object.entries(p.actions || {}).map(([a, how]) => `${a.replaceAll("_", " ")}: ${how}`).join(" · ");
+  $("authBody").innerHTML = `<p style="margin-top:0">${allowed} of ${v.sources.length} data sources required by <b>${esc(p.name)}</b> are allowed for <b>${esc(r.title)}</b> and agent <code>${esc(p.agent)}</code>.</p>
+    <table><thead><tr><th>Data source</th><th>Data</th><th>Required by the task</th><th>User authorized</th><th>Agent authorized</th><th>Allowed for this task</th><th>Who approves fixes</th><th>Data owner</th></tr></thead><tbody>` +
+    v.sources.map((s) => `<tr><td><b>${esc(s.system)}</b></td><td>${esc(s.data)}</td><td>${s.mandatory ? "required" : "optional (warning only)"}</td>
+      <td>${yn(s.user_authorized, s.user_reason)}</td><td>${yn(s.agent_authorized, s.agent_reason)}</td><td>${yn(s.allowed)}</td>
+      <td>${s.can_approve ? '<span class="yes">you</span>' : `<span class="muted">${esc(s.approvers.join(" or "))}</span>`}</td><td>${esc(s.owner)}</td></tr>`).join("") + "</tbody></table>" +
+    (r.warehouses ? `<p class="muted">Row access: ${esc(r.warehouses.join(", "))} only.</p>` : "") + (r.columns ? `<p class="muted">Column access: ${esc(r.columns.join(", "))}.</p>` : "");
+  $("profileBody").innerHTML = `<div class="facts"><span><b>Task</b>${esc(p.name)}</span><span><b>Profile</b><code>${esc(p.id)}</code> v${esc(p.version)}</span>
+      <span><b>Approved by</b>${esc((p.approved_by || []).join(", "))}</span><span><b>Agent</b><code>${esc(p.agent)}</code></span><span><b>Output</b>${esc(p.output)}</span></div>
+    <p class="muted">${esc(p.question || "")}</p>
+    <table><thead><tr><th>Required data</th><th>Readiness rules in this profile</th></tr></thead><tbody>` +
+    v.sources.map((s) => `<tr><td><b>${esc(s.data)}</b> <span class="muted">(${esc(s.system)})${s.mandatory ? "" : " · optional"}</span></td><td>${esc(s.rules.join(" · "))}</td></tr>`).join("") +
+    `</tbody></table><p class="muted">Actions: ${esc(actions)}</p>`;
+}
+async function loadView(task = "my_role") {
+  clearResults();
+  renderView(await api(`/pipeline/role-view?role=${encodeURIComponent($("role").value)}&task=${encodeURIComponent(task)}`));
+  await Promise.all([loadInbox(), loadDatasets(), loadPending()]);
+}
+// Step 9: every pending request, grouped, with the roles that may approve it; picking a role opens its inbox
+async function loadPending() {
+  const a = await api(`/pipeline/approvals?role=${encodeURIComponent($("role").value)}`);
+  $("pending").classList.toggle("has", a.total > 0);
+  const proposed = a.proposed.length ? `<optgroup label="Proposed now · not applied yet">` + a.proposed.map((f) =>
+    `<option value="${f.kind === "apply" ? "@apply" : f.kind === "request" ? "@request" : "@none"}">${esc(f.data)} · ${esc(f.fix)} → ${esc(f.approvers.join(" or "))}</option>`).join("") + "</optgroup>" : "";
+  const requests = a.requests.map((q) => `<optgroup label="Request #${q.id} · ${esc(q.task.replaceAll("_", " "))} · ${q.fixes.length} fix(es) · from ${esc(q.requested_by_title || q.requested_by)}">` +
+    (q.approver_roles || []).map((r) => `<option value="${esc(r.key)}">Approve as ${esc(r.title)}</option>`).join("") + "</optgroup>").join("");
+  $("pending").innerHTML = `<option value="">${a.total ? `${a.total} fix(es) to approve` : "none pending"}</option>` + proposed + requests;
+}
+$("pending").onchange = async () => {
+  const v = $("pending").value; $("pending").value = ""; if (!v || v === "@none") return;
+  if (v === "@apply") { $("fixes").scrollIntoView({ block: "start" }); $("apply").focus(); return; }  // yours: step 8
+  if (v === "@request") {  // someone else's: apply what you may, then Request approval in "What's next"
+    if (!$("apply").disabled) { $("apply").click(); } else { $("applied").scrollIntoView({ block: "start" }); }
+    return;
+  }
+  $("role").value = v;  // a pending request: switch to that approver and open the inbox
+  await loadView();
+  $("inbox").scrollIntoView({ block: "start" });
+};
+// Step 5 list: each data set says whether the readiness engine tested it, and the result for the selected task
+async function loadDatasets(select) {
+  const keep = select || $("dataset").value;
+  const list = await api(`/pipeline/datasets?task=${encodeURIComponent($("task").value || "")}&role=${encodeURIComponent($("role").value || "")}`);
+  $("dataset").innerHTML = list.map((d) => `<option value="${esc(d.id)}" title="${esc(d.label)}">${esc(d.short)}</option>`).join("");
+  $("statSets").textContent = list.filter((d) => !d.fixed).length;
+  if (list.some((d) => d.id === keep)) $("dataset").value = keep;
+}
+const reviewAs = (roles) => (roles || []).map((r) => `<button class="ghost" data-review="${esc(r.key)}">Review as ${esc(r.title)}</button>`).join(" ");
+function wireReview(scope) {
+  scope.querySelectorAll("[data-review]").forEach((b) => b.onclick = async () => {
+    $("role").value = b.dataset.review;
+    await loadView();
+    $("inbox").scrollIntoView({ block: "start" });
+  });
+}
+async function init() {
+  const [roles, datasets, agents, profiles] = await Promise.all([api("/pipeline/roles"), api("/pipeline/datasets"), api("/pipeline/agents"), api("/pipeline/profiles")]);
+  $("statRoles").textContent = roles.length;
+  $("statTasks").textContent = profiles.length;
+  $("statSystems").textContent = new Set(profiles.flatMap((p) => Object.keys(p.required_assets || {}))).size;
+  $("statSets").textContent = datasets.length;
+  const apps = [...new Set(roles.map((r) => r.app))];
+  $("role").innerHTML = apps.map((a) => `<optgroup label="${esc(a)}">` + roles.filter((r) => r.app === a)
+    .map((r) => `<option value="${esc(r.key)}">${esc(r.title)} (${esc(r.key)})</option>`).join("") + "</optgroup>").join("");
+  const wanted = PARAMS.get("role");  // e.g. aurelia:procurement when opened from SPARC as the Procurement Manager
+  $("role").value = roles.some((r) => r.key === wanted) ? wanted : "scinsight:warehouse_manager";
+  $("agent").innerHTML = agents.map((a) => `<option value="${esc(a.id)}" ${a.available ? "" : "disabled"} title="${esc(a.how_to_enable || a.name)}">${esc(a.id === "mock" ? "Mock" : "Claude")}${a.available ? "" : " (not configured)"}</option>`).join("");
+  await loadView();
+}
+async function run(btn, fn) {
+  const label = btn.textContent; btn.disabled = true; btn.textContent = "Working…";
+  let keep = false;
+  try { keep = await fn(); } catch (e) { show("check"); $("status").innerHTML = `<p><span class="BLOCKED pill">Error</span> ${esc(e.message)}</p>`; }
+  btn.textContent = label; if (!keep) btn.disabled = false;
+}
+$("role").onchange = () => loadView().catch((e) => alert(e.message));
+$("task").onchange = () => loadView($("task").value).catch((e) => alert(e.message));
+$("dataset").onchange = () => clearResults();
+$("detect").onclick = () => run($("detect"), async () => {
+  clearResults();
+  const ex = await api("/pipeline/extract", { dataset: $("dataset").value, task: $("task").value });
+  const r = await api("/pipeline/check", sel());
+  $("status").innerHTML = `<p class="muted" style="margin-top:0">Data set <b>${esc($("dataset").value)}</b> · ${inline(ex.text)}</p>`;
+  showCheck(r); await showReady(r); await Promise.all([loadDatasets(), loadPending()]);
+  $("check").scrollIntoView({ block: "start" });
+});
+$("propose").onclick = () => run($("propose"), async () => {
+  const r = await api("/pipeline/propose", { ...sel(), agent: $("agent").value });
+  $("agentTable").innerHTML = md(r.text) + (r.proposals.length ? next(8, "Approve &amp; apply") : "");
+  show("fixes"); show("applied", false);
+  $("apply").disabled = !r.proposals.length;
+  await loadPending();
+  $("fixes").scrollIntoView({ block: "start" });
+});
+$("apply").onclick = () => run($("apply"), async () => {
+  const r = await api("/pipeline/apply", sel());
+  $("resultBody").innerHTML = md(r.text.split("\n\n")[0]) + nextHtml(r.next || []);
+  if ($("reqBtn")) $("reqBtn").onclick = () => run($("reqBtn"), async () => {
+    const q = await api("/pipeline/request-approval", sel());
+    $("reqOut").innerHTML = `<p class="${q.queued ? "yes" : "muted"}">${inline(q.text)}</p>` +
+      (q.queued ? `<div class="row">${reviewAs(q.request.approver_roles)}</div>` : "");
+    wireReview($("reqOut"));
+    await loadPending();
+    return q.queued;  // keep the button disabled once the request is sent
+  });
+  await Promise.all([loadDatasets(), loadPending()]);
+  show("applied");
+  showCheck(r.after); await showReady(r.after);
+  $("applied").scrollIntoView({ block: "start" });
+  return true;  // keep "Approve & apply" disabled until a new proposal
+});
+$("reset").onclick = () => {
+  if (!confirm("Reset data?\n\nThis reverses ALL fixes: upstream rules, fixed data sets (DS-xx-F), certified versions, approval requests and test results. The original faults come back on the next Run checks.")) return;
+  run($("reset"), async () => {
+    const r = await api("/pipeline/reset", {});
+    clearResults(); show("check");
+    $("status").innerHTML = `<p class="statusline"><span class="pill READY_WITH_WARNINGS">RESET</span> ${inline(r.text)}</p>`;
+    $("missing").innerHTML = ""; $("checkBody").innerHTML = "";
+    await Promise.all([loadInbox(), loadPending(), loadDatasets("DS-01")]);
+    $("check").scrollIntoView({ block: "start" });
+  });
+};
+init().catch((e) => { show("check"); $("status").innerHTML = `<p>Error: ${esc(e.message)}</p>`; });
+</script>
+</body>
+</html>

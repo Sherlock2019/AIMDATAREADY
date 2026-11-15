@@ -1,0 +1,6 @@
+title: Stale inventory snapshot (re-ingested today)
+injected_fault: Inventory is the 2026-11-11 snapshot, re-loaded 30 minutes ago.
+expected_detection:
+- inventory:freshness
+expected_fix:
+- refresh_from_source

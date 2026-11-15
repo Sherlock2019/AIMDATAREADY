@@ -1,0 +1,8 @@
+title: Non-standard status codes
+injected_fault: Status codes 'Released' and ' released ' (fixable by normalising)
+  and 'ok' (unknown).
+expected_detection:
+- inventory:quality
+expected_fix:
+- normalise_codes
+- replace_bad_rows_from_source

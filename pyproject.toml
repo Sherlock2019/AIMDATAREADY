@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "task-data-readiness"
+version = "0.1.0"
+description = "PoC: task identification + deterministic data-readiness preflight (local demo, synthetic data)"
+readme = "README.md"
+requires-python = ">=3.11"
+# Versions verified locally on 2026-11-14 (Python 3.12.3): fastapi 0.162.7, uvicorn 0.54.0, pydantic 2.14.3,
+# PyYAML 6.0.3, httpx 0.28.1, pytest 9.2.0, ruff 0.17.5. Upper bounds stop an untested major upgrade.
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.30,<1",
+  "pydantic>=2.9,<3",
+  "pyyaml>=6,<7",
+  # production-style features (verified with chromadb 1.5.9, openlineage-python 1.55.0, jsonschema 4.26.0)
+  "jsonschema>=4.20,<5",          # validate ODCS v3.1.0 contracts against the official JSON Schema
+  "openlineage-python>=1.20,<2",  # OpenLineage run events (file transport)
+  "chromadb>=1,<2",               # permission-aware document search (embedded, no server)
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "httpx>=0.27,<1", "ruff>=0.6,<1", "anthropic>=1.17,<2"]
+# Optional Claude agent for the dataset lab (verified with anthropic 1.17.0)
+claude = ["anthropic>=1.17,<2"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# generated markdown table rows and Flowise note text
+"scripts/evaluate.py" = ["E501"]
+"flowise/build_flow.py" = ["E501"]
+"app/pipeline.py" = ["E501"]  # hand-laid checklist rows and markdown tables (# fmt: skip)

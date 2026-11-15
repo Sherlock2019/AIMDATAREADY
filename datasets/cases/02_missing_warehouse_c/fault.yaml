@@ -1,0 +1,6 @@
+title: Warehouse C rows missing
+injected_fault: The load dropped every WH-C inventory row.
+expected_detection:
+- inventory:coverage
+expected_fix:
+- reextract_rows

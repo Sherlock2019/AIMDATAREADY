@@ -1,0 +1,217 @@
+# ODCS v3.1.0 data contract + catalog record for `ariba_contracts` - SINGLE SOURCE OF TRUTH (edit this file).
+# Validated against the official ODCS JSON Schema at load time. SIMULATED SAP landscape, fictional owners.
+apiVersion: v3.1.0
+kind: DataContract
+id: supplier_agreements
+version: '1.0'
+status: approved
+name: Approved policies and supplier agreements
+domain: procurement
+description:
+  purpose: Approved, currently valid supplier agreements and purchasing policy.
+schema:
+- name: ariba_contracts
+  physicalName: ariba_contracts.csv
+  physicalType: file
+  logicalType: object
+  properties:
+  - name: doc_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 1
+  - name: title
+    logicalType: string
+    physicalType: string
+  - name: version
+    logicalType: string
+    physicalType: string
+    required: true
+  - name: source_id
+    logicalType: string
+    physicalType: string
+    required: true
+  - name: status
+    logicalType: string
+    physicalType: string
+    required: true
+    description: approved | draft | revoked | superseded
+  - name: valid_from
+    logicalType: date
+    physicalType: date
+    required: true
+    quality:
+    - name: iso_dates
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        pattern: ^\d{4}-\d{2}-\d{2}$
+      mustBe: 0
+  - name: valid_to
+    logicalType: date
+    physicalType: date
+  - name: supplier_id
+    logicalType: string
+    physicalType: string
+  description: Approved supplier agreements, purchasing policy and warehouse transfer policy (document collection for RAG).
+  dataGranularityDescription: one document version
+  customProperties:
+  - property: requiredFields
+    value:
+    - doc_id
+    - title
+    - version
+    - source_id
+    - status
+    - valid_from
+  - property: uniqueKeyDeclared
+    value: true
+slaProperties:
+- property: latency
+  value: 720
+  unit: h
+  element: source_event_time
+  description: Maximum age of the source data (source event time) for any consumer.
+- property: retention
+  value: Keep 13 months; staging copies are deleted at the next extraction; derived outputs follow the source.
+team:
+  members:
+  - username: Procurement team (fictional)
+    role: owner
+  - username: Knowledge Platform team (fictional)
+    role: technical owner
+  - username: Supply Chain Data team (fictional)
+    role: data steward
+support:
+- channel: '#sc-data-support (fictional channel)'
+  tool: slack
+  scope: issues
+roles:
+- role: procurement managers
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: planners
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: supply-chain director
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: agent:procurement-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:supervisor-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+customProperties:
+- property: catalogLifecycleStatus
+  value: active
+- property: catalogOwnerReviewedOn
+  value: '2026-10-01'
+- property: catalogGeographicCoverage
+  value: France, Spain, Italy (warehouses WH-A Paris, WH-B Madrid, WH-C Milan)
+- property: catalogSourceSystem
+  value: SAP Ariba Contracts
+- property: catalogSourceLocation
+  value: Ariba contract workspace export
+- property: catalogSourceRecordId
+  value: doc_id
+- property: catalogTransformationHistory
+  value:
+  - PDF to markdown
+  - one chunk per section heading
+- property: catalogLineage
+  value:
+  - SAP Ariba Contracts
+  - export job v1.0
+  - document store
+  - Chroma index (permission-aware)
+  - procurement agent
+- property: catalogChangeHistory
+  value:
+  - 2026-11-02 AGR-SUP-A v2.0 approved
+- property: catalogUnits
+  value: none
+- property: catalogKnownLimitations
+  value:
+  - annexes are not indexed
+- property: catalogApprovedUseCases
+  value:
+  - supplier policy questions
+  - supplier risk
+- property: catalogClassification
+  value: confidential
+- property: catalogPermittedPurposes
+  value:
+  - supply_chain_planning
+- property: catalogDocumentAuthority
+  value: Procurement-approved; published by the Procurement team in SAP Ariba
+- property: catalogRagIndexVersion
+  value: section chunker · all-MiniLM-L6-v2 (Chroma default, local ONNX) · ACL groups filtered in the query
+- property: contractConsumer
+  value: SCInsight planning agents (via the readiness gate)
+- property: contractPurpose
+  value:
+  - supply_chain_planning
+- property: contractSecurity
+  value:
+    external_model_processing: requires_approval
+- property: contractOperationalExpectations
+  value: Late or unavailable source -> alert the owner and block automated recommendations.
+- property: contractChangeManagement
+  value: The data owner approves breaking schema changes; consumers are notified 2 weeks ahead.
+- property: contractEvidence
+  value:
+    require_recent_validation: true
+    store_validation_run_id: true
+    store_source_snapshot_id: true
+- property: contractSourceRules
+  value:
+    snapshot_id_required: true
+    source_event_timestamp_required: true
+    ingestion_timestamp_required: true
+- property: contractProducer
+  value: Procurement team (SAP Ariba Contracts)
+- property: contractOwnership
+  value:
+    business_owner: Procurement
+    technical_owner: Knowledge Platform team
+    steward: Supply Chain Data team
+- property: contractBusinessDefinitions
+  value:
+    status: Only approved documents valid today may be used.
+- property: contractCoverage
+  value:
+  - all approved supplier agreements and the purchasing policy
+- property: contractLineage
+  value: SAP Ariba Contracts -> export job v1.0 -> Chroma index
+- property: contractHumanApproval
+  value:
+    domain: procurement
+- property: contractFreshnessExtra
+  value: {}
+- property: catalogKeysPresent
+  value:
+  - business_definitions
+  - business_domain
+  - business_owner
+  - contact
+  - data_steward
+  - description
+  - granularity
+  - name
+  - permitted_agents
+  - permitted_users
+  - retention
+  - schema_types
+  - technical_owner

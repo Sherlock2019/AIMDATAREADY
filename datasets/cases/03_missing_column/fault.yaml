@@ -1,0 +1,7 @@
+title: expiry_date column missing
+injected_fault: The inventory extract lost its expiry_date column.
+expected_detection:
+- inventory:schema
+- inventory:quality
+expected_fix:
+- restore_columns

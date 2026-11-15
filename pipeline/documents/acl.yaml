@@ -1,0 +1,13 @@
+# SIMULATED document permissions, as a real deployment would sync them from the DMS / SharePoint / Ariba groups.
+# Each document's front matter lists the groups that may read it; this file says which roles are in each group.
+# The search applies these groups INSIDE the vector query (Chroma `where` filter), so a passage from a document the
+# user may not read is never returned - not even to the agent.
+groups:
+  operations: [scinsight:planner, scinsight:production_planner, scinsight:warehouse_manager, scinsight:logistics_manager,
+               scinsight:agent_service, aurelia:production, aurelia:warehouse, aurelia:logistics, harness:planner,
+               harness:agent_runtime]
+  procurement: [scinsight:procurement_manager, scinsight:agent_service, aurelia:procurement, aurelia:finance]
+  quality: [scinsight:quality_manager, scinsight:agent_service, aurelia:quality]
+  management: [scinsight:supply_chain_director, aurelia:director, harness:supply_reviewer, harness:auditor]
+  knowledge_readers: [knowledge:kp_viewer, knowledge:kp_editor, knowledge:kp_admin]   # policies only
+  knowledge_admins: [knowledge:kp_editor, knowledge:kp_admin]                         # also supplier agreements

@@ -1,0 +1,100 @@
+# Every role defined in ~/Supplychain-AI-agent (inspected 2026-11-14), grouped by the app that defines it.
+# `source` is where the role is defined; tests/test_pipeline.py checks each id still appears in that file.
+#
+# read     which simulated SAP systems the role may read in THIS demo ("all" or a list)
+# approve  REVIEW_AUTHORITY-style domains whose corrections the role may approve (humans only)
+#
+# Faithfulness notes:
+#  * SCInsight roles: `read` mirrors READ_ROLES (every reader role reads all tenant data; sap_executor is not a
+#    reader); `approve` mirrors REVIEW_AUTHORITY in backend/scinsight/security.py. agent_service is not human.
+#  * Aurelia, harness and knowledge-platform roles: those apps have no SAP-extract permission model, so `read` and
+#    `approve` are a DEMO mapping derived from each role's areas/tools/purpose. They are not those apps' rules.
+domains:
+  inventory: [warehouse_manager, supply_chain_director]
+  warehouse: [warehouse_manager, supply_chain_director]
+  logistics: [logistics_manager, supply_chain_director]
+  factory: [production_planner, supply_chain_director]
+  procurement: [procurement_manager, supply_chain_director]
+  quality: [quality_manager, supply_chain_director]
+  master_data: [supply_chain_director]   # not in REVIEW_AUTHORITY -> SCInsight's default is the director
+
+apps:
+  - id: scinsight
+    name: SCInsight API (SupplyChain Insight AI)
+    source: backend/scinsight/security.py
+    roles:
+      - {id: planner, title: Planner, human: true, read: all, approve: [],
+         tasks: [compare_stock, recommend_stock_transfer, read_transfer_policy, recommend_replenishment, forecast_demand]}
+      - {id: production_planner, title: Production planner, human: true, read: all, approve: [factory],
+         tasks: [check_production_readiness, compare_stock]}
+      - {id: procurement_manager, title: Procurement manager, human: true, read: all, approve: [procurement], columns: [price_eur],
+         tasks: [recommend_replenishment, identify_supplier_risk, supplier_policy_qa]}
+      - {id: warehouse_manager, title: Warehouse manager, human: true, read: all, approve: [inventory, warehouse],
+         tasks: [compare_stock, recommend_stock_transfer, read_transfer_policy]}
+      - {id: logistics_manager, title: Logistics manager, human: true, read: all, approve: [logistics],
+         tasks: [plan_shipments, recommend_stock_transfer, read_transfer_policy, compare_stock]}
+      - {id: quality_manager, title: Quality manager, human: true, read: all, approve: [quality],
+         tasks: [review_batch_release, identify_supplier_risk, supplier_policy_qa]}
+      - {id: supply_chain_director, title: Supply-chain director, human: true, read: all, columns: [price_eur],
+         approve: [inventory, warehouse, logistics, factory, procurement, quality, master_data],
+         tasks: [weekly_executive_report, recommend_stock_transfer, recommend_replenishment, identify_supplier_risk, check_production_readiness, review_batch_release, plan_shipments]}
+      - {id: agent_service, title: Agent service (Flowise / LangGraph key), human: false, read: all, approve: [],
+         tasks: [compare_stock, recommend_stock_transfer, read_transfer_policy, recommend_replenishment, identify_supplier_risk, supplier_policy_qa, forecast_demand, check_production_readiness]}
+      - {id: mlops_engineer, title: MLOps engineer, human: true, read: all, approve: [],
+         tasks: [evaluate_forecast_model, forecast_demand]}
+      - {id: sap_executor, title: SAP executor (records SAP execution), human: true, read: [], approve: [],
+         source: backend/scinsight/fixtures.py,
+         tasks: [record_sap_execution]}
+
+  - id: aurelia
+    name: Aurelia copilot role views
+    source: backend/app/roles.py
+    roles:
+      - {id: director, title: Supply Chain Director, human: true, read: all, columns: [price_eur],
+         approve: [inventory, warehouse, logistics, factory, procurement, quality, master_data],
+         tasks: [weekly_executive_report, recommend_stock_transfer, recommend_replenishment, identify_supplier_risk, check_production_readiness]}
+      - {id: demand, title: Demand Planner, human: true, read: [s4_mm, ewm, ibp, s4_sd], approve: [],
+         tasks: [forecast_demand, compare_stock]}
+      - {id: production, title: Production Planner, human: true, read: [s4_pp, s4_mm, qm, mdg], approve: [factory],
+         tasks: [check_production_readiness, compare_stock]}
+      - {id: procurement, title: Procurement Manager, human: true, read: [ariba, ariba_docs, s4_mm, mdg, qm], approve: [procurement], columns: [price_eur],
+         tasks: [recommend_replenishment, identify_supplier_risk, supplier_policy_qa]}
+      - {id: warehouse, title: Warehouse Manager, human: true, read: [s4_mm, ewm, tm], approve: [inventory, warehouse],
+         tasks: [compare_stock, recommend_stock_transfer, read_transfer_policy]}
+      - {id: logistics, title: Logistics Manager, human: true, read: [tm, s4_sd, ewm, s4_mm], approve: [logistics],
+         tasks: [plan_shipments, recommend_stock_transfer]}
+      - {id: quality, title: Quality Manager, human: true, read: [qm, s4_mm, ariba], approve: [quality],
+         tasks: [review_batch_release, identify_supplier_risk]}
+      - {id: finance, title: Finance / CFO, human: true, read: all, approve: [], columns: [price_eur],
+         tasks: [weekly_executive_report, recommend_replenishment]}
+      - {id: mlops, title: AI / MLOps Manager, human: true, read: [ibp, s4_mm, s4_sd], approve: [],
+         tasks: [evaluate_forecast_model, forecast_demand]}
+
+  - id: harness
+    name: Company harness (agent profiles)
+    source: backend/harness/registry.py
+    roles:
+      - {id: agent_runtime, title: Agent runtime (workflow engine), human: false, read: all, approve: [],
+         tasks: [compare_stock, recommend_stock_transfer, recommend_replenishment, forecast_demand]}
+      - {id: planner, title: Planner, human: true, read: [s4_mm, ibp, s4_pp, ariba, tm], approve: [], warehouses: [WH-A, WH-B],
+         tasks: [compare_stock, recommend_stock_transfer, forecast_demand]}
+      - {id: supply_reviewer, title: Supply reviewer, human: true, read: all, columns: [price_eur],
+         approve: [inventory, warehouse, logistics, factory, procurement, quality],
+         tasks: [recommend_stock_transfer, recommend_replenishment, check_production_readiness, review_batch_release]}
+      - {id: profile_author, title: Profile author, human: true, read: [], approve: [],
+         tasks: [read_transfer_policy]}
+      - {id: profile_admin, title: Profile admin, human: true, read: [], approve: [],
+         tasks: [read_transfer_policy]}
+      - {id: auditor, title: Auditor, human: true, read: [], approve: [],
+         tasks: [weekly_executive_report]}
+
+  - id: knowledge
+    name: Knowledge platform (documents, not SAP extracts)
+    source: backend/knowledge/security.py
+    roles:
+      - {id: kp_viewer, title: Knowledge viewer, human: true, read: [ariba_docs], approve: [],
+         tasks: [read_transfer_policy, supplier_policy_qa]}
+      - {id: kp_editor, title: Knowledge editor, human: true, read: [ariba_docs], approve: [],
+         tasks: [read_transfer_policy, supplier_policy_qa]}
+      - {id: kp_admin, title: Knowledge admin, human: true, read: [ariba_docs], approve: [],
+         tasks: [read_transfer_policy, supplier_policy_qa]}

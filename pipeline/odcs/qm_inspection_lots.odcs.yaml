@@ -1,0 +1,209 @@
+# ODCS v3.1.0 data contract + catalog record for `qm_inspection_lots` - SINGLE SOURCE OF TRUTH (edit this file).
+# Validated against the official ODCS JSON Schema at load time. SIMULATED SAP landscape, fictional owners.
+apiVersion: v3.1.0
+kind: DataContract
+id: inspection_lots
+version: '1.0'
+status: approved
+name: Inspection lots
+domain: quality
+description:
+  purpose: Inspection results and usage decisions.
+schema:
+- name: qm_inspection_lots
+  physicalName: qm_inspection_lots.csv
+  physicalType: file
+  logicalType: object
+  properties:
+  - name: lot_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 1
+  - name: product_id
+    logicalType: string
+    physicalType: string
+  - name: batch_id
+    logicalType: string
+    physicalType: string
+  - name: result
+    logicalType: string
+    physicalType: string
+  - name: usage_decision
+    logicalType: string
+    physicalType: string
+    required: true
+    description: accepted | rejected | pending
+    quality:
+    - name: allowed_values
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        validValues:
+        - accepted
+        - rejected
+        - pending
+      mustBe: 0
+  - name: decided_on
+    logicalType: date
+    physicalType: date
+  description: Quality inspection results and usage decisions per batch.
+  dataGranularityDescription: one inspection lot
+  customProperties:
+  - property: requiredFields
+    value:
+    - lot_id
+    - product_id
+    - batch_id
+    - usage_decision
+  - property: uniqueKeyDeclared
+    value: true
+slaProperties:
+- property: latency
+  value: 72
+  unit: h
+  element: source_event_time
+  description: Maximum age of the source data (source event time) for any consumer.
+- property: retention
+  value: Keep 13 months; staging copies are deleted at the next extraction; derived outputs follow the source.
+team:
+  members:
+  - username: Quality team (fictional)
+    role: owner
+  - username: SAP QM team (fictional)
+    role: technical owner
+  - username: Supply Chain Data team (fictional)
+    role: data steward
+support:
+- channel: '#sc-data-support (fictional channel)'
+  tool: slack
+  scope: issues
+roles:
+- role: quality managers
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: procurement managers
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: supply-chain director
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: agent:planning-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:procurement-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:supervisor-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+customProperties:
+- property: catalogLifecycleStatus
+  value: active
+- property: catalogOwnerReviewedOn
+  value: '2026-10-01'
+- property: catalogGeographicCoverage
+  value: France, Spain, Italy (warehouses WH-A Paris, WH-B Madrid, WH-C Milan)
+- property: catalogSourceSystem
+  value: SAP QM
+- property: catalogSourceLocation
+  value: API_INSPECTIONLOT_SRV
+- property: catalogSourceRecordId
+  value: lot_id
+- property: catalogTransformationHistory
+  value:
+  - usage decision codes mapped to accepted | rejected | pending
+- property: catalogLineage
+  value:
+  - SAP QM
+  - connector v1.0
+  - staging
+  - readiness gate
+  - quality and procurement agents
+- property: catalogChangeHistory
+  value:
+  - 2026-06-20 pending added
+- property: catalogUnits
+  value: none
+- property: catalogKnownLimitations
+  value:
+  - only finished-product lots
+- property: catalogApprovedUseCases
+  value:
+  - quality release
+  - supplier risk
+- property: catalogClassification
+  value: internal
+- property: catalogPermittedPurposes
+  value:
+  - supply_chain_planning
+- property: contractConsumer
+  value: SCInsight planning agents (via the readiness gate)
+- property: contractPurpose
+  value:
+  - supply_chain_planning
+- property: contractSecurity
+  value:
+    external_model_processing: requires_approval
+- property: contractOperationalExpectations
+  value: Late or unavailable source -> alert the owner and block automated recommendations.
+- property: contractChangeManagement
+  value: The data owner approves breaking schema changes; consumers are notified 2 weeks ahead.
+- property: contractEvidence
+  value:
+    require_recent_validation: true
+    store_validation_run_id: true
+    store_source_snapshot_id: true
+- property: contractSourceRules
+  value:
+    snapshot_id_required: true
+    source_event_timestamp_required: true
+    ingestion_timestamp_required: true
+- property: contractProducer
+  value: SAP QM team
+- property: contractOwnership
+  value:
+    business_owner: Quality
+    technical_owner: SAP QM team
+    steward: Supply Chain Data team
+- property: contractBusinessDefinitions
+  value:
+    usage_decision: Only accepted lots may be used.
+- property: contractCoverage
+  value:
+  - product
+- property: contractLineage
+  value: SAP QM -> connector v1.0 -> snapshot id
+- property: contractHumanApproval
+  value:
+    domain: quality
+- property: contractFreshnessExtra
+  value: {}
+- property: catalogKeysPresent
+  value:
+  - business_definitions
+  - business_domain
+  - business_owner
+  - contact
+  - data_steward
+  - description
+  - granularity
+  - name
+  - permitted_agents
+  - permitted_users
+  - retention
+  - schema_types
+  - technical_owner

@@ -1,0 +1,6 @@
+origin_warehouse,destination_warehouse,mode,lead_time_days,cost_per_unit_eur
+WH-A,WH-B,road,3,0.40
+WH-B,WH-A,road,3,0.40
+WH-B,WH-C,road,2,0.35
+WH-C,WH-A,road,2,0.35
+WH-C,WH-B,road,2,0.35

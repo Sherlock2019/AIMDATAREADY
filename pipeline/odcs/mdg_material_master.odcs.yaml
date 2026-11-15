@@ -1,0 +1,197 @@
+# ODCS v3.1.0 data contract + catalog record for `mdg_material_master` - SINGLE SOURCE OF TRUTH (edit this file).
+# Validated against the official ODCS JSON Schema at load time. SIMULATED SAP landscape, fictional owners.
+apiVersion: v3.1.0
+kind: DataContract
+id: material_master
+version: '1.0'
+status: approved
+name: Material master
+domain: master data
+description:
+  purpose: Governed product master data.
+schema:
+- name: mdg_material_master
+  physicalName: mdg_material_master.csv
+  physicalType: file
+  logicalType: object
+  properties:
+  - name: product_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 1
+  - name: description
+    logicalType: string
+    physicalType: string
+  - name: uom
+    logicalType: string
+    physicalType: string
+    required: true
+    quality:
+    - name: allowed_values
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        validValues:
+        - EA
+        - CS
+      mustBe: 0
+  - name: shelf_life_days
+    logicalType: integer
+    physicalType: integer
+    required: true
+    description: Total shelf life from production
+  - name: status
+    logicalType: string
+    physicalType: string
+  description: Governed product master data (unit, shelf life, status).
+  dataGranularityDescription: one product
+  customProperties:
+  - property: requiredFields
+    value:
+    - product_id
+    - uom
+    - shelf_life_days
+    - status
+  - property: uniqueKeyDeclared
+    value: true
+slaProperties:
+- property: latency
+  value: 2160
+  unit: h
+  element: source_event_time
+  description: Maximum age of the source data (source event time) for any consumer.
+- property: retention
+  value: Keep 13 months; staging copies are deleted at the next extraction; derived outputs follow the source.
+team:
+  members:
+  - username: Master Data Office (fictional)
+    role: owner
+  - username: SAP MDG team (fictional)
+    role: technical owner
+  - username: Supply Chain Data team (fictional)
+    role: data steward
+support:
+- channel: '#sc-data-support (fictional channel)'
+  tool: slack
+  scope: issues
+roles:
+- role: all planning roles
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: agent:planning-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:procurement-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:supervisor-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+customProperties:
+- property: catalogLifecycleStatus
+  value: active
+- property: catalogOwnerReviewedOn
+  value: '2026-10-01'
+- property: catalogGeographicCoverage
+  value: France, Spain, Italy (warehouses WH-A Paris, WH-B Madrid, WH-C Milan)
+- property: catalogSourceSystem
+  value: SAP MDG
+- property: catalogSourceLocation
+  value: MDG material governance
+- property: catalogSourceRecordId
+  value: product_id
+- property: catalogTransformationHistory
+  value:
+  - none
+- property: catalogLineage
+  value:
+  - SAP MDG
+  - connector v1.0
+  - staging
+  - readiness gate
+  - all planning agents
+- property: catalogChangeHistory
+  value:
+  - 2026-10-30 shelf_life_days reviewed
+- property: catalogUnits
+  value: days; EA
+- property: catalogKnownLimitations
+  value:
+  - cosmetics SKUs only
+- property: catalogApprovedUseCases
+  value:
+  - demand forecasting
+  - replenishment
+  - executive reporting
+- property: catalogClassification
+  value: internal
+- property: catalogPermittedPurposes
+  value:
+  - supply_chain_planning
+- property: contractConsumer
+  value: SCInsight planning agents (via the readiness gate)
+- property: contractPurpose
+  value:
+  - supply_chain_planning
+- property: contractSecurity
+  value:
+    external_model_processing: requires_approval
+- property: contractOperationalExpectations
+  value: Late or unavailable source -> alert the owner and block automated recommendations.
+- property: contractChangeManagement
+  value: The data owner approves breaking schema changes; consumers are notified 2 weeks ahead.
+- property: contractEvidence
+  value:
+    require_recent_validation: true
+    store_validation_run_id: true
+    store_source_snapshot_id: true
+- property: contractSourceRules
+  value:
+    snapshot_id_required: true
+    source_event_timestamp_required: true
+    ingestion_timestamp_required: true
+- property: contractProducer
+  value: SAP MDG team
+- property: contractOwnership
+  value:
+    business_owner: Master Data Office
+    technical_owner: SAP MDG team
+    steward: Supply Chain Data team
+- property: contractBusinessDefinitions
+  value:
+    uom: Base unit of measure used by every other asset.
+- property: contractCoverage
+  value:
+  - product
+- property: contractLineage
+  value: SAP MDG -> connector v1.0 -> change request id
+- property: contractHumanApproval
+  value:
+    domain: master_data
+- property: contractFreshnessExtra
+  value: {}
+- property: catalogKeysPresent
+  value:
+  - business_definitions
+  - business_domain
+  - business_owner
+  - contact
+  - data_steward
+  - description
+  - granularity
+  - name
+  - permitted_agents
+  - permitted_users
+  - retention
+  - schema_types
+  - technical_owner

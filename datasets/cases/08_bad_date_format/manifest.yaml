@@ -1,0 +1,38 @@
+dataset: 08_bad_date_format
+title: Expiry dates in DD/MM/YYYY
+synthetic: true
+notice: SYNTHETIC demo data. Not connected to SAP or any production system.
+assets:
+  sap_inventory_snapshot:
+    file: inventory.csv
+    business_owner: Demo Inventory Control (fictional)
+    technical_owner: Demo Data Platform team (fictional)
+    source_name: S4HANA-SYNTHETIC / MARD+MCHB extract
+    source_version: SAP-SYN-2026-11-14
+    source_event_time: '2026-11-14T06:00:00+00:00'
+    ingested_at: '2026-11-14T06:30:00+00:00'
+    contract_ref: contracts/inventory_snapshot@1.2 (demo reference)
+    known_limitations:
+    - Synthetic data; quantities are illustrative.
+    export_settings:
+      date_format: '%d/%m/%Y'
+  demand_forecast_weekly:
+    file: demand_forecast.csv
+    business_owner: Demo Demand Planning (fictional)
+    technical_owner: Demo Data Science team (fictional)
+    source_name: demo-forecast-job
+    source_version: FCST-2026-W46
+    source_event_time: '2026-11-13T00:00:00+00:00'
+    ingested_at: '2026-11-13T01:00:00+00:00'
+    known_limitations:
+    - Baseline forecast; promotions are not modelled.
+  transfer_lead_times:
+    file: transfer_lead_times.csv
+    business_owner: Demo Logistics (fictional)
+    technical_owner: Demo Logistics IT (fictional)
+    source_name: demo-tm-lanes
+    source_version: LANES-2026-11
+    source_event_time: '2026-11-01T00:00:00+00:00'
+    ingested_at: '2026-11-01T02:00:00+00:00'
+    known_limitations:
+    - Planned lead times, not measured transit times.

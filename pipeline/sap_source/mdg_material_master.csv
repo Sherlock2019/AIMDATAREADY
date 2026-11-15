@@ -1,0 +1,4 @@
+product_id,description,uom,shelf_life_days,status
+SKU-001,Vitamin C serum 30 ml,EA,720,active
+SKU-002,Hydrating cream 50 ml,EA,720,active
+SUN-SPF50-100,Sunscreen SPF50 100 ml,EA,720,active

@@ -1,0 +1,7 @@
+order_id,product_id,plant,quantity,due_date,status
+PP-1001,SKU-001,FAC-1,2000,2026-11-18,released
+PP-1002,SKU-002,FAC-1,2500,2026-11-20,released
+PP-1003,SUN-SPF50-100,FAC-1,3000,2026-11-22,released
+PP-1004,SKU-001,FAC-1,3500,2026-11-24,planned
+PP-1005,SKU-002,FAC-1,4000,2026-11-26,planned
+PP-1006,SUN-SPF50-100,FAC-1,4500,2026-11-28,planned

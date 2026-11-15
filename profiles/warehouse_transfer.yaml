@@ -1,0 +1,77 @@
+# Task profile: should stock of one product move from an origin warehouse to a destination warehouse?
+# Validated on load (app/profiles.py). Change a value, restart the service, and the new rule applies.
+task_id: warehouse_transfer
+version: "1.0.0"
+description: Decide whether to move stock of one product from an origin warehouse to a destination warehouse.
+purpose: inventory_planning          # checked against each asset's permitted purposes and the user's purposes
+demo_values_note: >
+  DEMO VALUES. Every threshold in this file (24 h, 72 h, 168 h, 720 h, block/warn choices) was picked for the
+  synthetic demo. None is a universal business requirement; each customer sets them with the data owners.
+allow_warnings: true                 # READY_WITH_WARNINGS may continue (set false to make every warning block)
+
+required_context:
+  - name: product_id
+    pattern: '^[A-Z0-9][A-Z0-9-]{1,40}$'
+    description: Product / SKU code, e.g. SKU-001 or SUN-SPF50-100
+  - name: origin_warehouse
+    pattern: '^WH-[A-Z0-9]{1,10}$'
+  - name: destination_warehouse
+    pattern: '^WH-[A-Z0-9]{1,10}$'
+  - name: planning_period
+    pattern: '^\d{4}-\d{2}-\d{2}/\d{4}-\d{2}-\d{2}$'
+    description: Inclusive date range, e.g. 2026-11-16/2026-11-29
+
+assets:
+  - name: inventory
+    asset_id: sap_inventory_snapshot
+    mandatory: true
+    access:
+      require_agent_access: true
+      row_scope_context_keys: [origin_warehouse, destination_warehouse]   # user must be scoped to both
+    freshness:
+      max_age_hours: 24
+      on_missing_event_time: block
+    schema:
+      required_fields: [product_id, warehouse_id, batch_id, quantity, status, expiry_date]
+    coverage:
+      - {dimension: product, context_keys: [product_id]}
+      - {dimension: warehouse, context_keys: [origin_warehouse, destination_warehouse]}
+    provenance:
+      required_fields: [business_owner, technical_owner, source_version, source_event_time]
+      on_missing: block
+
+  - name: demand_forecast
+    asset_id: demand_forecast_weekly
+    mandatory: true
+    access:
+      require_agent_access: true
+      row_scope_context_keys: [origin_warehouse, destination_warehouse]
+    freshness:
+      max_age_hours: 168
+      warn_age_hours: 72               # between 72 h and 168 h -> warning, not a block
+      on_missing_event_time: block
+    schema:
+      required_fields: [product_id, warehouse_id, week_start, forecast_units]
+    coverage:
+      - {dimension: product, context_keys: [product_id]}
+      - {dimension: warehouse, context_keys: [origin_warehouse, destination_warehouse]}
+      - {dimension: period, context_keys: [planning_period]}
+    provenance:
+      required_fields: [business_owner, source_version, source_event_time]
+      on_missing: warn                 # demo choice: a forecast with no recorded owner may continue, flagged
+
+  - name: transfer_lead_times
+    asset_id: transfer_lead_times
+    mandatory: true
+    access:
+      require_agent_access: true
+    freshness:
+      max_age_hours: 720
+      on_missing_event_time: warn
+    schema:
+      required_fields: [origin_warehouse, destination_warehouse, lead_time_days]
+    coverage:
+      - {dimension: lane, context_keys: [origin_warehouse, destination_warehouse]}
+    provenance:
+      required_fields: [business_owner, source_version]
+      on_missing: block

@@ -1,0 +1,221 @@
+# ODCS v3.1.0 data contract + catalog record for `ewm_bin_stock` - SINGLE SOURCE OF TRUTH (edit this file).
+# Validated against the official ODCS JSON Schema at load time. SIMULATED SAP landscape, fictional owners.
+apiVersion: v3.1.0
+kind: DataContract
+id: bin_stock
+version: '1.0'
+status: approved
+name: Warehouse bin stock
+domain: warehouse
+description:
+  purpose: Physical bin stock per batch.
+schema:
+- name: ewm_bin_stock
+  physicalName: ewm_bin_stock.csv
+  physicalType: file
+  logicalType: object
+  properties:
+  - name: warehouse_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 1
+  - name: bin_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 2
+  - name: product_id
+    logicalType: string
+    physicalType: string
+  - name: batch_id
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 3
+  - name: quantity
+    logicalType: integer
+    physicalType: integer
+    required: true
+    quality:
+    - name: non_negative
+      type: sql
+      dimension: conformity
+      mustBe: 0
+      query: SELECT COUNT(*) FROM ewm_bin_stock WHERE quantity < 0
+  - name: bin_status
+    logicalType: string
+    physicalType: string
+    required: true
+    description: available | blocked (blocked bins cannot be picked)
+    quality:
+    - name: allowed_values
+      type: library
+      metric: invalidValues
+      dimension: conformity
+      arguments:
+        validValues:
+        - available
+        - blocked
+      mustBe: 0
+  description: Physical stock per bin and batch in the warehouses.
+  dataGranularityDescription: one batch per bin per snapshot
+  customProperties:
+  - property: requiredFields
+    value:
+    - warehouse_id
+    - bin_id
+    - product_id
+    - batch_id
+    - quantity
+    - bin_status
+  - property: uniqueKeyDeclared
+    value: true
+slaProperties:
+- property: latency
+  value: 24
+  unit: h
+  element: source_event_time
+  description: Maximum age of the source data (source event time) for any consumer.
+- property: retention
+  value: Keep 13 months; staging copies are deleted at the next extraction; derived outputs follow the source.
+team:
+  members:
+  - username: Warehouse Operations team (fictional)
+    role: owner
+  - username: SAP EWM team (fictional)
+    role: technical owner
+  - username: Supply Chain Data team (fictional)
+    role: data steward
+support:
+- channel: '#sc-data-support (fictional channel)'
+  tool: slack
+  scope: issues
+roles:
+- role: warehouse managers
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: logistics managers
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: supply-chain director
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: agent:planning-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:procurement-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:supervisor-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+customProperties:
+- property: catalogLifecycleStatus
+  value: active
+- property: catalogOwnerReviewedOn
+  value: '2026-10-01'
+- property: catalogGeographicCoverage
+  value: France, Spain, Italy (warehouses WH-A Paris, WH-B Madrid, WH-C Milan)
+- property: catalogSourceSystem
+  value: SAP EWM
+- property: catalogSourceLocation
+  value: API_WHSE_PHYSSTOCKPROD
+- property: catalogSourceRecordId
+  value: warehouse_id + bin_id + batch_id
+- property: catalogTransformationHistory
+  value:
+  - bin codes kept as in EWM
+- property: catalogLineage
+  value:
+  - SAP EWM
+  - connector v1.1
+  - staging
+  - readiness gate
+  - warehouse agent
+- property: catalogChangeHistory
+  value:
+  - 2026-08-30 bin_status added
+- property: catalogUnits
+  value: EA (each)
+- property: catalogKnownLimitations
+  value:
+  - handling units are not expanded
+- property: catalogApprovedUseCases
+  value:
+  - warehouse balancing
+  - executive reporting
+- property: catalogClassification
+  value: internal
+- property: catalogPermittedPurposes
+  value:
+  - supply_chain_planning
+- property: contractConsumer
+  value: SCInsight planning agents (via the readiness gate)
+- property: contractPurpose
+  value:
+  - supply_chain_planning
+- property: contractSecurity
+  value:
+    external_model_processing: requires_approval
+- property: contractOperationalExpectations
+  value: Late or unavailable source -> alert the owner and block automated recommendations.
+- property: contractChangeManagement
+  value: The data owner approves breaking schema changes; consumers are notified 2 weeks ahead.
+- property: contractEvidence
+  value:
+    require_recent_validation: true
+    store_validation_run_id: true
+    store_source_snapshot_id: true
+- property: contractSourceRules
+  value:
+    snapshot_id_required: true
+    source_event_timestamp_required: true
+    ingestion_timestamp_required: true
+- property: contractProducer
+  value: SAP EWM team
+- property: contractOwnership
+  value:
+    business_owner: Warehouse Operations
+    technical_owner: SAP EWM team
+    steward: Supply Chain Data team
+- property: contractBusinessDefinitions
+  value:
+    bin_status: Blocked bins cannot be picked.
+- property: contractCoverage
+  value:
+  - warehouse
+- property: contractLineage
+  value: SAP EWM -> connector v1.1 -> snapshot id
+- property: contractHumanApproval
+  value:
+    domain: warehouse
+- property: contractFreshnessExtra
+  value: {}
+- property: catalogKeysPresent
+  value:
+  - business_definitions
+  - business_domain
+  - business_owner
+  - contact
+  - data_steward
+  - description
+  - granularity
+  - name
+  - permitted_agents
+  - permitted_users
+  - retention
+  - schema_types
+  - technical_owner

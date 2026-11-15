@@ -1,0 +1,6 @@
+title: Inventory owners not recorded
+injected_fault: The inventory record has no business or technical owner.
+expected_detection:
+- inventory:provenance
+expected_fix:
+- lookup_owner

@@ -1,0 +1,210 @@
+# ODCS v3.1.0 data contract + catalog record for `tm_lanes` - SINGLE SOURCE OF TRUTH (edit this file).
+# Validated against the official ODCS JSON Schema at load time. SIMULATED SAP landscape, fictional owners.
+apiVersion: v3.1.0
+kind: DataContract
+id: transfer_lead_times_and_costs
+version: '1.0'
+status: approved
+name: Transfer lead times and costs
+domain: logistics
+description:
+  purpose: Planned lead time and cost per unit for each warehouse lane.
+schema:
+- name: tm_lanes
+  physicalName: tm_lanes.csv
+  physicalType: file
+  logicalType: object
+  properties:
+  - name: origin_warehouse
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 1
+  - name: destination_warehouse
+    logicalType: string
+    physicalType: string
+    primaryKey: true
+    primaryKeyPosition: 2
+  - name: mode
+    logicalType: string
+    physicalType: string
+  - name: lead_time_days
+    logicalType: integer
+    physicalType: integer
+    required: true
+    description: Planned door-to-door days, not measured transit time
+    quality:
+    - name: non_negative
+      type: sql
+      dimension: conformity
+      mustBe: 0
+      query: SELECT COUNT(*) FROM tm_lanes WHERE lead_time_days < 0
+  - name: cost_per_unit_eur
+    logicalType: number
+    physicalType: decimal
+    required: true
+    quality:
+    - name: non_negative
+      type: sql
+      dimension: conformity
+      mustBe: 0
+      query: SELECT COUNT(*) FROM tm_lanes WHERE cost_per_unit_eur < 0
+  description: Planned road lead time and cost per unit between warehouses.
+  dataGranularityDescription: one lane (origin, destination, mode)
+  customProperties:
+  - property: requiredFields
+    value:
+    - origin_warehouse
+    - destination_warehouse
+    - lead_time_days
+    - cost_per_unit_eur
+  - property: uniqueKeyDeclared
+    value: true
+slaProperties:
+- property: latency
+  value: 720
+  unit: h
+  element: source_event_time
+  description: Maximum age of the source data (source event time) for any consumer.
+- property: retention
+  value: Keep 13 months; staging copies are deleted at the next extraction; derived outputs follow the source.
+team:
+  members:
+  - username: Logistics team (fictional)
+    role: owner
+  - username: SAP TM team (fictional)
+    role: technical owner
+  - username: Supply Chain Data team (fictional)
+    role: data steward
+support:
+- channel: '#sc-data-support (fictional channel)'
+  tool: slack
+  scope: issues
+roles:
+- role: logistics managers
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: warehouse managers
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: planners
+  access: read
+  customProperties:
+  - property: principalType
+    value: user group
+- role: agent:planning-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:procurement-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+- role: agent:supervisor-agent
+  access: read
+  customProperties:
+  - property: principalType
+    value: agent
+customProperties:
+- property: catalogLifecycleStatus
+  value: active
+- property: catalogOwnerReviewedOn
+  value: '2026-10-01'
+- property: catalogGeographicCoverage
+  value: France, Spain, Italy (warehouses WH-A Paris, WH-B Madrid, WH-C Milan)
+- property: catalogSourceSystem
+  value: SAP TM
+- property: catalogSourceLocation
+  value: TM transportation lanes
+- property: catalogSourceRecordId
+  value: origin_warehouse + destination_warehouse
+- property: catalogTransformationHistory
+  value:
+  - cost converted to EUR per unit
+- property: catalogLineage
+  value:
+  - SAP TM
+  - connector v1.0
+  - staging
+  - readiness gate
+  - logistics and warehouse agents
+- property: catalogChangeHistory
+  value:
+  - 2026-11-01 monthly lane refresh
+- property: catalogUnits
+  value: days; EUR per unit
+- property: catalogKnownLimitations
+  value:
+  - planned values only; no carrier-specific rates
+- property: catalogApprovedUseCases
+  value:
+  - stock transfers
+  - replenishment
+- property: catalogClassification
+  value: internal
+- property: catalogPermittedPurposes
+  value:
+  - supply_chain_planning
+- property: contractConsumer
+  value: SCInsight planning agents (via the readiness gate)
+- property: contractPurpose
+  value:
+  - supply_chain_planning
+- property: contractSecurity
+  value:
+    external_model_processing: requires_approval
+- property: contractOperationalExpectations
+  value: Late or unavailable source -> alert the owner and block automated recommendations.
+- property: contractChangeManagement
+  value: The data owner approves breaking schema changes; consumers are notified 2 weeks ahead.
+- property: contractEvidence
+  value:
+    require_recent_validation: true
+    store_validation_run_id: true
+    store_source_snapshot_id: true
+- property: contractSourceRules
+  value:
+    snapshot_id_required: true
+    source_event_timestamp_required: true
+    ingestion_timestamp_required: true
+- property: contractProducer
+  value: SAP TM team
+- property: contractOwnership
+  value:
+    business_owner: Logistics
+    technical_owner: SAP TM team
+    steward: Supply Chain Data team
+- property: contractBusinessDefinitions
+  value:
+    lead_time_days: Planned door-to-door days.
+- property: contractCoverage
+  value:
+  - lane
+- property: contractLineage
+  value: SAP TM -> connector v1.0 -> monthly lane version
+- property: contractHumanApproval
+  value:
+    domain: logistics
+- property: contractFreshnessExtra
+  value: {}
+- property: catalogKeysPresent
+  value:
+  - business_definitions
+  - business_domain
+  - business_owner
+  - contact
+  - data_steward
+  - description
+  - granularity
+  - name
+  - permitted_agents
+  - permitted_users
+  - retention
+  - schema_types
+  - technical_owner

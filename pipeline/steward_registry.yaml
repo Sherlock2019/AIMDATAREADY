@@ -1,0 +1,52 @@
+registry_version: steward-registry-2026-11-01
+assets:
+  ariba_contracts:
+    business_owner: Procurement team (fictional)
+    technical_owner: Knowledge Platform team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'
+  s4_mm_stock:
+    business_owner: Inventory Operations team (fictional)
+    technical_owner: SAP Integration team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'
+  ewm_bin_stock:
+    business_owner: Warehouse Operations team (fictional)
+    technical_owner: SAP EWM team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'
+  tm_lanes:
+    business_owner: Logistics team (fictional)
+    technical_owner: SAP TM team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'
+  ibp_demand_forecast:
+    business_owner: Demand Planning team (fictional)
+    technical_owner: SAP IBP team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'
+  s4_pp_orders:
+    business_owner: Production Planning team (fictional)
+    technical_owner: SAP Integration team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'
+  s4_sd_orders:
+    business_owner: Sales Operations team (fictional)
+    technical_owner: SAP Integration team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'
+  ariba_pos:
+    business_owner: Procurement team (fictional)
+    technical_owner: SAP Ariba team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'
+  qm_inspection_lots:
+    business_owner: Quality team (fictional)
+    technical_owner: SAP QM team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'
+  mdg_material_master:
+    business_owner: Master Data Office (fictional)
+    technical_owner: SAP MDG team (fictional)
+    data_steward: Supply Chain Data team (fictional)
+    contact: '#sc-data-support (fictional channel)'

@@ -1,0 +1,12 @@
+registry_version: steward-registry-2026-11-01
+notice: Synthetic governed owner registry.
+assets:
+  sap_inventory_snapshot:
+    business_owner: Demo Inventory Control (fictional)
+    technical_owner: Demo Data Platform team (fictional)
+  demand_forecast_weekly:
+    business_owner: Demo Demand Planning (fictional)
+    technical_owner: Demo Data Science team (fictional)
+  transfer_lead_times:
+    business_owner: Demo Logistics (fictional)
+    technical_owner: Demo Logistics IT (fictional)

@@ -1,0 +1,6 @@
+title: Empty required values
+injected_fault: One batch has no status, another has no quantity.
+expected_detection:
+- inventory:quality
+expected_fix:
+- replace_bad_rows_from_source
