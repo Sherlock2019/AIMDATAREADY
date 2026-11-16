@@ -10,7 +10,7 @@
 #   ./start.sh test            pytest + ruff
 #   ./start.sh flowise         API + dedicated Flowise (127.0.0.1:3460) with the Data-Readiness Agentflow
 #   ./start.sh flowise-stop    stop that Flowise container (its data volume is kept)
-#   ./start.sh public          standalone app on a server: background API + password-protected public port 8461
+#   ./start.sh public          standalone app on a server: background API + public port 8461 (no sign-in; TDR_PUBLIC_AUTH=on adds one)
 #                              (Caddy container in front; the API itself stays on 127.0.0.1). Restarts after a reboot.
 #   ./start.sh public-stop     close the public port (the API keeps running)
 #   ./start.sh status | stop | restart | setup | help
@@ -97,23 +97,26 @@ reboot_on() {  # start the API again after a reboot (the Caddy container has its
 public_running() { [ "$(docker inspect -f '{{.State.Running}}' "$PUBLIC_NAME" 2>/dev/null)" = true ]; }
 
 public_start() {
-  command -v docker >/dev/null || { echo "Docker is needed for the public port (Caddy with a password)." >&2; return 1; }
+  command -v docker >/dev/null || { echo "Docker is needed for the public port (Caddy proxy)." >&2; return 1; }
   running || start_bg
-  local user="${TDR_PUBLIC_USER:-admin}" pw="${TDR_PUBLIC_PASSWORD:-}" hash code=""
-  if [ -z "$pw" ]; then  # first time: a random password, kept in .env
-    pw=$("$PY" -c 'import secrets; print(secrets.token_urlsafe(18))')
-    env_set TDR_PUBLIC_USER "$user"; env_set TDR_PUBLIC_PASSWORD "$pw"
+  # No sign-in by default. TDR_PUBLIC_AUTH=on in .env turns the password back on.
+  local auth="${TDR_PUBLIC_AUTH:-off}" user="${TDR_PUBLIC_USER:-admin}" pw="${TDR_PUBLIC_PASSWORD:-}" hash="" code="" want=200 auth_block=""
+  if [ "$auth" = on ]; then
+    if [ -z "$pw" ]; then  # first time: a random password, kept in .env
+      pw=$("$PY" -c 'import secrets; print(secrets.token_urlsafe(18))')
+      env_set TDR_PUBLIC_USER "$user"; env_set TDR_PUBLIC_PASSWORD "$pw"
+    fi
+    hash=$(docker run --rm "$CADDY_IMAGE" caddy hash-password --plaintext "$pw") || return 1
+    auth_block=$(printf '\tbasic_auth {\n\t\t%s %s\n\t}' "$user" "$hash")
+    want=401  # without the password = Caddy is up and asking for it
   fi
-  hash=$(docker run --rm "$CADDY_IMAGE" caddy hash-password --plaintext "$pw") || return 1
   mkdir -p .data/public
   cat > .data/public/Caddyfile <<EOF
 {
 	admin off
 }
 :$PUBLIC_PORT {
-	basic_auth {
-		$user $hash
-	}
+$auth_block
 	reverse_proxy 127.0.0.1:$PORT
 }
 EOF
@@ -121,19 +124,21 @@ EOF
   docker run -d --name "$PUBLIC_NAME" --restart unless-stopped --network host \
     -v "$PWD/.data/public/Caddyfile:/etc/caddy/Caddyfile:ro" "$CADDY_IMAGE" >/dev/null
   reboot_on
-  for _ in $(seq 1 50); do  # 401 without the password = Caddy is up and asking for it
+  for _ in $(seq 1 50); do
     code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PUBLIC_PORT/health" || true)
-    [ "$code" = 401 ] && break; sleep 0.2
+    [ "$code" = "$want" ] && break; sleep 0.2
   done
-  if [ "$code" != 401 ] || ! curl -fs -o /dev/null -u "$user:$pw" "http://127.0.0.1:$PUBLIC_PORT/health"; then
+  if [ "$code" != "$want" ] || { [ "$auth" = on ] && ! curl -fs -o /dev/null -u "$user:$pw" "http://127.0.0.1:$PUBLIC_PORT/health"; }; then
     echo "The public port did not come up; see: docker logs $PUBLIC_NAME" >&2; return 1
   fi
+  local login="none (open: anyone who can reach the port can use the app; TDR_PUBLIC_AUTH=on in .env adds a password)"
+  [ "$auth" = on ] && login="$user / $pw      (in .env: TDR_PUBLIC_USER / TDR_PUBLIC_PASSWORD)"
   cat <<EOF
 
   Data Readiness (standalone, public)
     URL       : http://$(public_ip):$PUBLIC_PORT/dashboard
-    Login     : $user / $pw      (in .env: TDR_PUBLIC_USER / TDR_PUBLIC_PASSWORD; change it, then ./start.sh public)
-    Security  : open TCP $PUBLIC_PORT in the security group to YOUR IP only. Plain HTTP: the password is not encrypted.
+    Login     : $login
+    Security  : open TCP $PUBLIC_PORT in the security group to YOUR IP only (plain HTTP).
     Reboot    : API via crontab @reboot, public port via Docker (restart unless-stopped)
     Close     : ./start.sh public-stop
 EOF
@@ -157,9 +162,9 @@ EOF
   if on_ec2; then
     local ip; ip="$(public_ip)"
     if command -v docker >/dev/null && public_running; then
-      echo "  Public    : http://$ip:$PUBLIC_PORT/dashboard   (login: TDR_PUBLIC_USER / TDR_PUBLIC_PASSWORD in .env)"
+      echo "  Public    : http://$ip:$PUBLIC_PORT/dashboard"
     else
-      echo "  Public    : not open. Run ./start.sh public for http://$ip:$PUBLIC_PORT/dashboard (password-protected)"
+      echo "  Public    : not open. Run ./start.sh public for http://$ip:$PUBLIC_PORT/dashboard"
     fi
   fi
 }
