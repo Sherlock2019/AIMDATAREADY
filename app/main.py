@@ -19,6 +19,8 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import __version__
+from app.access_gate import AccessGate
+from app.access_gate import register as register_access_gate
 from app.adapters.demo import DemoAdapter
 from app.audit import AuditSink, JsonlAuditSink, MemoryAuditSink
 from app.dataset_lab import DatasetLab
@@ -125,6 +127,9 @@ def create_app(
     async def _unexpected(request: Request, exc: Exception) -> JSONResponse:
         log.exception("unexpected error")
         return _error(request, 500, "internal_error", "Unexpected error; treat the request as BLOCKED.")
+
+    # ------------------------------------------------------------------ public demo: email access gate (off by default)
+    register_access_gate(app, AccessGate(settings.access_gate, settings.data_dir))
 
     # ------------------------------------------------------------------ identity + demo scenario
     def principals(request: Request, demo_identity: DemoIdentity | None):

@@ -163,6 +163,29 @@ button.danger { color:var(--bad); } button.danger:hover:not(:disabled) { border-
 .demohead .right { margin-left:auto; display:flex; gap:14px; align-items:center; }
 .textlink { font-size:13px; font-weight:600; text-decoration:none; color:var(--accent); }
 .textlink:hover { text-decoration:underline; }
+button.linkbtn { width:auto; height:auto; border:none; background:none; padding:0; color:var(--accent); font-weight:600; font-size:13px; }
+button.linkbtn:hover:not(:disabled) { text-decoration:underline; }
+.who { font-size:13px; color:var(--muted); } .who b { color:var(--ink2); }
+
+/* ---------- access gate ---------- */
+.gate { display:grid; grid-template-columns:1fr 440px; gap:56px; align-items:center; padding-top:56px; padding-bottom:72px; }
+.gpitch h1 { font-size:40px; line-height:1.1; letter-spacing:-.03em; margin:12px 0 14px; }
+.gpitch p { color:var(--ink2); font-size:16px; max-width:540px; }
+.gpitch ul { list-style:none; padding:0; margin:22px 0 0; display:grid; gap:12px; }
+.gpitch li { display:flex; align-items:center; gap:10px; color:var(--ink2); font-size:14.5px; }
+.gpitch li i { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-size:12px; font-weight:800; background:var(--okbg); color:var(--ok); flex:0 0 auto; }
+.gatecard { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow-lg); padding:26px 26px 20px; }
+.gtitle { display:flex; align-items:center; gap:10px; font-size:20px; font-weight:700; letter-spacing:-.015em; color:var(--accent); }
+.gsub { margin:4px 0 14px; color:var(--muted); font-size:13px; }
+.gatecard form p { color:var(--ink2); font-size:14px; margin:0 0 14px; }
+.gatecard label { display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; margin-bottom:12px; }
+.gatecard input { height:44px; font-size:14.5px; }
+.gcode { letter-spacing:.5em; font-size:22px !important; font-weight:700; text-align:center; font-variant-numeric:tabular-nums; }
+.gbtn { height:46px; border-radius:999px; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:4px; }
+.glinks { display:flex; justify-content:space-between; margin-top:12px; }
+.gerr { margin:12px 0 0; padding:9px 12px; border-radius:10px; background:var(--badbg); color:var(--bad); font-size:13.5px; font-weight:500; }
+.gnote { margin:14px 0 0; color:var(--muted); font-size:12.5px; }
+@media (max-width:980px) { .gate { grid-template-columns:minmax(0, 1fr); gap:28px; padding-top:28px; } .gpitch h1 { font-size:30px; } }
 .demo { display:grid; grid-template-columns:340px minmax(0, 1fr); gap:22px; align-items:start; padding-bottom:56px; }
 .rail { position:sticky; top:calc(var(--top) + 16px); max-height:calc(100vh - var(--top) - 32px); overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 18px 8px; scrollbar-width:thin; }
 .phaselbl { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:2px 0 12px; }
@@ -392,11 +415,44 @@ ul.missing li { padding:7px 11px; border-left:3px solid var(--bad); background:v
 
 <!-- ======================================================= SEE IT IN ACTION -->
 <div class="page hidden" id="page-demo">
-  <div class="wrap">
+  <div class="wrap gate hidden" id="gate">
+    <div class="gpitch">
+      <span class="eyebrow"><span class="live"></span>Live demo</span>
+      <h1>See it in action</h1>
+      <p>Run the readiness gate yourself on simulated SAP extracts: pick a role and a task, watch it catch stale stock,
+      missing lanes, bad units and leaked prices, then fix and certify the data.</p>
+      <ul>
+        <li><i>✓</i>28 roles, 13 AI tasks, 10 simulated SAP data sets</li>
+        <li><i>✓</i>Every metric with its value, status, fix and root cause</li>
+        <li><i>✓</i>Propose, approve and re-check fixes, then ask the certified data</li>
+      </ul>
+    </div>
+    <div class="gatecard" role="dialog" aria-labelledby="gTitle">
+      <div class="gtitle" id="gTitle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Open the live demo</div>
+      <p class="gsub">Task Data Readiness · interactive demo</p>
+      <form id="gStep1" novalidate>
+        <p>Enter your details and we'll email you a 6-digit code to confirm your address. Then the demo opens.</p>
+        <label>Your name<input id="gName" autocomplete="name" maxlength="80" required></label>
+        <label>Work or personal email<input id="gEmail" type="email" autocomplete="email" maxlength="160" required></label>
+        <label><span>Company <span class="muted">(optional)</span></span><input id="gCompany" autocomplete="organization" maxlength="120"></label>
+        <button class="primary gbtn" id="gSend" type="submit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Email me a code</button>
+      </form>
+      <form id="gStep2" class="hidden" novalidate>
+        <p>We sent a 6-digit code to <b id="gTo"></b>. It expires in 15 minutes.</p>
+        <label>Confirmation code<input id="gCode" class="gcode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></label>
+        <button class="primary gbtn" id="gVerify" type="submit">Verify and open the demo</button>
+        <div class="glinks"><button type="button" class="linkbtn" id="gBack">Use a different email</button><button type="button" class="linkbtn" id="gResend">Send a new code</button></div>
+      </form>
+      <p class="gerr hidden" id="gErr" role="alert"></p>
+      <p class="gnote">Your email is used only to give you access to this demo and so I can follow up. No newsletter.</p>
+    </div>
+  </div>
+  <div class="wrap" id="demoApp">
     <div class="demohead">
       <div><span class="eyebrow"><span class="live"></span>Live demo</span><h1>See it in action</h1>
         <p>Pick a role and a task, run the readiness checks, then fix what is missing.</p></div>
       <div class="right">
+        <span class="who hidden" id="who">Signed in as <b id="whoName"></b> · <button type="button" class="linkbtn" id="signout">Sign out</button></span>
         <a class="textlink" href="#how">ⓘ How it works</a>
         <button class="ghost danger" id="reset" type="button" title="Reverse all fixes: upstream rules, fixed data sets, certified versions, approval requests and test results. The original faults come back on the next Run checks.">↺ Reset data</button>
       </div>
@@ -458,9 +514,9 @@ function route() {
   document.querySelectorAll(".tabs a").forEach((a) => { if (a.dataset.page === page) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   document.title = page === "demo" ? "See it in action · Task Data Readiness" : "How it works · Task Data Readiness";
   window.scrollTo(0, 0);
+  if (page === "demo") openDemo();
 }
 window.addEventListener("hashchange", route);
-route();
 document.querySelectorAll("[data-scroll]").forEach((a) => a.onclick = (e) => { e.preventDefault(); $(a.dataset.scroll).scrollIntoView({ block: "start" }); });
 $("themeBtn").onclick = () => {
   const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
@@ -533,9 +589,70 @@ async function api(path, body) {
   const headers = { "Content-Type": "application/json", ...hostAuth() };
   const res = await fetch(BASE + path, body === undefined ? { headers } : { method: "POST", headers, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && data.error && data.error.code === "access_required") {  // public demo: email not confirmed
+    ACCESS = { ...ACCESS, gate: true, verified: false }; demoLoaded = false;
+    if (!$("page-demo").classList.contains("hidden")) openDemo();
+  }
   if (!res.ok) throw new Error((data.error && data.error.message) || data.detail || (res.status === 401 ? "Sign in to SPARC first" : res.statusText));
   return data;
 }
+
+// ---------- access gate (only when the server runs with TDR_ACCESS_GATE=on): confirm an email, then the demo opens
+let ACCESS = { gate: false, verified: true };
+let demoLoaded = false;
+async function refreshAccess() {
+  try { ACCESS = await api("/access/status"); } catch { ACCESS = { gate: false, verified: true }; }
+}
+async function openDemo() {
+  await accessReady;
+  const locked = ACCESS.gate && !ACCESS.verified;
+  $("gate").classList.toggle("hidden", !locked);
+  $("demoApp").classList.toggle("hidden", locked);
+  $("who").classList.toggle("hidden", !(ACCESS.gate && ACCESS.verified));
+  $("whoName").textContent = ACCESS.name || ACCESS.email || "";
+  if (locked) {
+    if (ACCESS.available === false) gateError("Access codes can't be sent right now. Please try again later.");
+    return;
+  }
+  if (!demoLoaded) {
+    demoLoaded = true;
+    await ready;
+    await loadView().catch((e) => { show("check"); $("status").innerHTML = `<p>Error: ${esc(e.message)}</p>`; });
+  }
+}
+const contact = () => ({ name: $("gName").value, email: $("gEmail").value, company: $("gCompany").value });
+function gateError(msg) { $("gErr").textContent = msg || ""; $("gErr").classList.toggle("hidden", !msg); }
+function gateStep(n) {
+  $("gStep1").classList.toggle("hidden", n !== 1); $("gStep2").classList.toggle("hidden", n !== 2);
+  (n === 1 ? $("gName").value ? $("gEmail") : $("gName") : $("gCode")).focus();
+}
+async function gatePost(path, body) {
+  const res = await fetch(BASE + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { const e = new Error((data.error && data.error.message) || res.statusText); e.expired = data.expired; throw e; }
+  return data;
+}
+async function gateRun(btn, busy, fn) {
+  const label = btn.innerHTML; btn.disabled = true; btn.textContent = busy; gateError("");
+  try { await fn(); } catch (e) { gateError(e.message); if (e.expired) gateStep(1); }
+  btn.innerHTML = label; btn.disabled = false;
+}
+async function unlocked() { await refreshAccess(); $("gCode").value = ""; gateStep(1); openDemo(); }
+async function sendCode() {
+  const r = await gatePost("/access/request", contact());
+  if (r.verified) return unlocked();
+  $("gTo").textContent = contact().email.trim().toLowerCase();
+  gateStep(2);
+}
+$("gStep1").onsubmit = (e) => { e.preventDefault(); gateRun($("gSend"), "Sending…", sendCode); };
+$("gStep2").onsubmit = (e) => {
+  e.preventDefault();
+  gateRun($("gVerify"), "Checking…", async () => { await gatePost("/access/verify", { ...contact(), code: $("gCode").value }); await unlocked(); });
+};
+$("gCode").oninput = () => { $("gCode").value = $("gCode").value.replace(/\D/g, "").slice(0, 6); if ($("gCode").value.length === 6) $("gStep2").requestSubmit(); };
+$("gBack").onclick = () => { gateError(""); gateStep(1); };
+$("gResend").onclick = () => gateRun($("gResend"), "Sending…", async () => { await sendCode(); gateError(""); $("gCode").value = ""; });
+$("signout").onclick = async () => { await gatePost("/access/logout", {}).catch(() => {}); ACCESS = { ...ACCESS, verified: false, name: null, email: null }; demoLoaded = false; openDemo(); };
 const sel = () => ({ role: $("role").value, task: $("task").value });
 const show = (id, on = true) => {
   $(id).classList.toggle("hidden", !on);
@@ -701,7 +818,6 @@ async function init() {
   const wanted = PARAMS.get("role");  // e.g. aurelia:procurement when opened from SPARC as the Procurement Manager
   $("role").value = roles.some((r) => r.key === wanted) ? wanted : "scinsight:warehouse_manager";
   $("agent").innerHTML = agents.map((a) => `<option value="${esc(a.id)}" ${a.available ? "" : "disabled"} title="${esc(a.how_to_enable || a.name)}">${esc(a.id === "mock" ? "Mock agent" : "Claude")}${a.available ? "" : " (not configured)"}</option>`).join("");
-  await loadView();
 }
 async function run(btn, fn) {
   const label = btn.innerHTML; btn.disabled = true; btn.textContent = "Working…";
@@ -760,7 +876,10 @@ $("reset").onclick = () => {
     $("check").scrollIntoView({ block: "start" });
   });
 };
-init().catch((e) => { show("check"); $("status").innerHTML = `<p>Error: ${esc(e.message)}</p>`; });
+// public part (landing stats, role and agent lists) loads now; the live demo loads when its page opens (after the gate)
+const ready = init().catch((e) => { show("check"); $("status").innerHTML = `<p>Error: ${esc(e.message)}</p>`; });
+const accessReady = refreshAccess();
+route();
 </script>
 </body>
 </html>

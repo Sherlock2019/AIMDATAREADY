@@ -21,6 +21,8 @@ class Settings:
     datasets_dir: Path = ROOT / "datasets"  # faulty-dataset lab: originals, source of record, profile
     datasets_work_dir: Path = ROOT / ".data" / "datasets"  # working copies that fixes are applied to
     pipeline_work_dir: Path = ROOT / ".data" / "pipeline"  # SAP pipeline staging + rounds (Flowise demo)
+    access_gate: bool = False  # public demo: confirm an email (6-digit code) before the live demo (access_gate.py)
+    data_dir: Path = ROOT / ".data"  # gate secret + leads.jsonl
 
     @property
     def demo_mode(self) -> bool:
@@ -40,6 +42,7 @@ class Settings:
             audit_path=Path(audit) if audit else None,
             datasets_dir=Path(os.environ.get("TDR_DATASETS_DIR", ROOT / "datasets")),
             datasets_work_dir=Path(os.environ.get("TDR_DATASETS_WORK_DIR", ROOT / ".data" / "datasets")),
+            access_gate=os.environ.get("TDR_ACCESS_GATE", "").strip().lower() in {"1", "on", "true", "yes"},
         )
 
 
