@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # taskDataReadiness launcher. Local demonstration only: the API binds 127.0.0.1.
 #
-#   ./start.sh                 set up if needed, then run the API in the foreground (Ctrl+C to stop)
+#   ./start.sh                 set up if needed, then run the API in the foreground (Ctrl+C to stop);
+#                              on EC2 it does ./start.sh public instead (use ./start.sh fg for local-only foreground)
 #   ./start.sh --bg | bg       run the API in the background (log .data/server.log, PID .data/server.pid)
 #   ./start.sh dashboard       background API + print the dashboard URL
 #   ./start.sh demo [NN]       faulty-dataset demo in the terminal: all 11 cases, or one (e.g. 07)
@@ -165,6 +166,7 @@ EOF
 
 case "${1:-}" in
   ""|fg)        setup
+                if [ -z "${1:-}" ] && on_ec2; then public_start; banner; exit 0; fi
                 if running; then
                   echo "taskDataReadiness is already running on $URL (PID $(port_pid))."
                   echo "Use it as is, or run ./start.sh restart (background) / ./start.sh stop then ./start.sh."
@@ -185,6 +187,6 @@ case "${1:-}" in
   stop)         stop ;;
   restart)      stop; setup; start_bg; banner ;;
   setup)        setup; echo "Setup complete." ;;
-  help|-h|--help) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//' ;;
-  *)            echo "Unknown command '$1'"; sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  help|-h|--help) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *)            echo "Unknown command '$1'"; sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac
