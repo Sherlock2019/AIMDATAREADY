@@ -82,6 +82,10 @@ public_ip() {  # EC2 instance metadata (IMDSv2), then a public echo service
   echo "${ip:-<public-ip>}"
 }
 
+on_ec2() {  # no network call: the DMI vendor (Nitro) or Xen hypervisor UUID says EC2
+  grep -qs 'Amazon EC2' /sys/devices/virtual/dmi/id/sys_vendor || grep -qsi '^ec2' /sys/hypervisor/uuid
+}
+
 reboot_on() {  # start the API again after a reboot (the Caddy container has its own Docker restart policy)
   command -v crontab >/dev/null || { echo "  ! no crontab: after a reboot run ./start.sh --bg"; return 0; }
   local line; line="@reboot cd $(printf %q "$PWD") && bash ./start.sh --bg >> .data/launch.log 2>&1  $CRON_TAG"
@@ -149,6 +153,14 @@ banner() {
   Claude    : $( [ -n "${ANTHROPIC_API_KEY:-}" ] && echo "API key found (Ask Claude enabled)" || echo "not configured (set ANTHROPIC_API_KEY in .env)")
   Stop      : ./start.sh stop
 EOF
+  if on_ec2; then
+    local ip; ip="$(public_ip)"
+    if command -v docker >/dev/null && public_running; then
+      echo "  Public    : http://$ip:$PUBLIC_PORT/dashboard   (login: TDR_PUBLIC_USER / TDR_PUBLIC_PASSWORD in .env)"
+    else
+      echo "  Public    : not open. Run ./start.sh public for http://$ip:$PUBLIC_PORT/dashboard (password-protected)"
+    fi
+  fi
 }
 
 case "${1:-}" in
