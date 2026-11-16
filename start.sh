@@ -171,7 +171,8 @@ EOF
 
 case "${1:-}" in
   ""|fg)        setup
-                if [ -z "${1:-}" ] && on_ec2; then public_start; banner; exit 0; fi
+                # on EC2, or when a public proxy is already up: (re)build it so its config matches this script
+                if [ -z "${1:-}" ] && { on_ec2 || public_running; }; then public_start; banner; exit 0; fi
                 if running; then
                   echo "taskDataReadiness is already running on $URL (PID $(port_pid))."
                   echo "Use it as is, or run ./start.sh restart (background) / ./start.sh stop then ./start.sh."
