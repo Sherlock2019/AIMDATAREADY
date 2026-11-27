@@ -47,17 +47,6 @@ User request ─► 1 Identify task ─► 2 Load the task's readiness profile (
 * **Lineage and retrieval**: runs emit OpenLineage events, and document search (Chroma) filters by permission inside
   the query.
 
-## Quick start
-
-Linux or WSL with Python 3.11+.
-
-```bash
-./start.sh dashboard    # installs on first run, then open http://127.0.0.1:8460/dashboard
-./start.sh test         # tests + lint
-./start.sh help         # all commands
-```
-
-In the dashboard, pick a role and a task, choose a data set, run the checks, then propose and apply fixes.
 
 ## What next
 
