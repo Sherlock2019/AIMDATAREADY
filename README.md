@@ -59,6 +59,53 @@ Linux or WSL with Python 3.11+.
 
 In the dashboard, pick a role and a task, choose a data set, run the checks, then propose and apply fixes.
 
+## What next
+
+### 1. Test it
+
+```bash
+./start.sh test         # unit + API tests, lint
+./start.sh scenarios    # 36 labelled readiness scenarios: expected vs actual
+./start.sh demo         # 11 faulty data sets: detect → fix → re-check, in the terminal
+.venv/bin/python scripts/evaluate.py   # labelled evaluation → docs/evaluation_report.md
+```
+
+Then try your own cases in the dashboard or the API docs (<http://127.0.0.1:8460/docs>).
+
+### 2. Integrate it in any AI pipeline
+
+The gate is one HTTP call, so it fits any pipeline (Flowise, LangGraph, LangChain, a custom agent or a plain
+backend). Call it **before** the agent, retriever or data service runs:
+
+```bash
+curl -s -X POST http://127.0.0.1:8460/readiness/check -H 'Content-Type: application/json' -d '{
+  "task_id": "warehouse_transfer",
+  "context": {"product_id":"SKU-001","origin_warehouse":"WH-A","destination_warehouse":"WH-C",
+              "planning_period":"2026-11-16/2026-11-29"},
+  "demo_identity": {"user":"planner_all","agent":"scinsight_supervisor"}}'
+```
+
+* `READY` (or an allowed `READY_WITH_WARNINGS`): continue to the agent.
+* `BLOCKED`: stop, show the `reasons` to the user, and log the `evaluation_id`.
+
+Steps for your own pipeline:
+
+1. **Add a gate step** where the request is routed. In Flowise that is a Custom Function node plus a Condition node
+   (see [examples/flowise_integration.md](examples/flowise_integration.md)). In LangGraph it is a node or a check in
+   the `route()` function. In code it is one HTTP call.
+2. **Describe your tasks** as readiness profiles: copy a file in `profiles/` and set the data sets, freshness,
+   coverage and access each task needs.
+3. **Connect your data** by writing an adapter: subclass `ReadinessAdapter` in
+   [app/adapters/base.py](app/adapters/base.py) (catalog, schema, coverage, authorisation for your database, SAP,
+   catalog tool or vector store).
+4. **Reuse your router** if you have one: pass its task id instead of using the demo keyword router.
+
+### 3. Before production
+
+* Replace the demo identity with a real identity provider (verified user and agent tokens).
+* Enforce the same access rules in the database, API and retriever; this gate is a preflight, not the only barrier.
+* Move audit and lineage to a durable store, and agree real thresholds with the data owners.
+
 ## More
 
 * Full reference (endpoints, scenarios, adding profiles and adapters, limitations): [docs/reference.md](docs/reference.md)
